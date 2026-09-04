@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JUSTA MT — Atlas da Justiça Climática de Mato Grosso</title>
+<meta name="description" content="Quem emite, quem sofre e quem consegue responder: 141 municípios de Mato Grosso em mapas, rankings, comparações e estatística interativa.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E5AA8'/%3E%3Ccircle cx='32' cy='18' r='7' fill='%23F2C230'/%3E%3Cpath d='M32 25v27' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32h36' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32l-6 12h12z' fill='%23C8102E'/%3E%3Cpath d='M50 32l-6 12h12z' fill='%23F28C28'/%3E%3Cpath d='M24 54h16' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffffff;--surface:#ffffff;--soft:#f6f7fb;--border:#e5e7eb;--text:#111827;--muted:#6b7280;
+  --blue:#1E5AA8;--blue-soft:#e8f0fa;--red:#C8102E;--red-soft:#fdecef;--orange:#F28C28;--yellow:#F2C230;--green:#1f9d74;
+  --r:14px;--shadow:0 10px 30px rgba(17,24,39,.06);--hdr:64px;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+#hdr{position:sticky;top:0;z-index:1000;height:var(--hdr);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 20px}
+#logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;letter-spacing:-.03em;color:var(--blue);white-space:nowrap}
+#logo svg{width:32px;height:32px}
+#logo small{font-weight:500;color:var(--muted);font-size:.8rem;letter-spacing:0;margin-left:4px}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent;border-radius:10px;padding:8px 12px;font:inherit;font-weight:600;font-size:.86rem;color:var(--muted);cursor:pointer}
+nav button.on{background:var(--blue-soft);color:var(--blue);border-color:#cfe0f5}
+nav button:hover{color:var(--blue)}
+.wrap{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
+.screen{display:none}.screen.on{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:18px}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+h2{font-size:1.15rem;font-weight:700;margin-bottom:10px}
+h3{font-size:.95rem;font-weight:700;margin-bottom:6px}
+p.lead{color:var(--muted);font-size:1rem;max-width:760px}
+label.lbl{display:block;font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+select,input[type=text]{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 10px;font:inherit;font-size:.92rem;background:#fff;color:var(--text)}
+select:focus,input:focus{outline:2px solid #cfe0f5;border-color:var(--blue)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 11px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--muted)}
+.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip.red.on{background:var(--red);border-color:var(--red)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;color:var(--text)}
+.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.sm{padding:5px 9px;font-size:.78rem}
+/* mapa */
+#map-layout{display:grid;grid-template-columns:340px 1fr;gap:18px}
+#map{height:640px;border-radius:var(--r);border:1px solid var(--border);background:#fff}
+.legend{margin-top:12px}
+.legend .row{display:flex;align-items:center;gap:8px;font-size:.82rem;margin:3px 0}
+.legend .sw{width:22px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.08)}
+.leaflet-container{font:inherit}
+.leaflet-tooltip.jt{background:#111827;color:#fff;border:none;border-radius:8px;padding:6px 9px;font-size:.8rem;box-shadow:none}
+.leaflet-tooltip.jt::before{display:none}
+.stat-line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:.86rem}
+.stat-line b{font-weight:700}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi .k{background:var(--soft);border-radius:12px;padding:12px 14px}
+.kpi .k .v{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.kpi .k .l{font-size:.78rem;color:var(--muted)}
+.tag{display:inline-block;border-radius:6px;padding:2px 8px;font-size:.74rem;font-weight:700}
+.tagA{background:#dbe7f7;color:#1E5AA8}.tagB{background:#e6f0fb;color:#2f6fbd}.tagC{background:#fdf1cf;color:#8a6a00}.tagD{background:#fde3e7;color:#C8102E}
+.tagDef{background:#f3e6f2;color:#7A0177}
+/* municipio */
+.bar-row{display:grid;grid-template-columns:230px 1fr 90px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.84rem}
+.bar-row .bar{height:10px;background:var(--soft);border-radius:6px;position:relative;overflow:hidden}
+.bar-row .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.bar-row .bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:#111827;text-decoration:none}
+.bar-row .val{text-align:right;font-weight:700}
+.bar-row .name{color:var(--text)}
+.bar-row .name small{display:block;color:var(--muted);font-weight:400;font-size:.72rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer;white-space:nowrap}
+td.num,th.num{text-align:right}
+tr.hl td{background:var(--blue-soft)}
+tbody tr{cursor:pointer}tbody tr:hover td{background:var(--soft)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.result{background:var(--soft);border-radius:12px;padding:14px 16px;font-size:.9rem}
+.result b{font-size:1.05rem}
+.note{font-size:.78rem;color:var(--muted);margin-top:8px}
+.glos{border-left:4px solid var(--blue);padding:8px 12px;background:var(--soft);border-radius:0 10px 10px 0;margin:8px 0}
+.glos b{display:block;color:var(--blue)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.steps .s{border-radius:12px;padding:14px;color:#fff}
+.steps .s b{display:block;font-size:1.05rem;margin-bottom:4px}
+.steps .s span{font-size:.84rem;opacity:.92}
+.muni-search{position:relative}
+.muni-list{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:10px;max-height:240px;overflow:auto;z-index:50;display:none;box-shadow:var(--shadow)}
+.muni-list div{padding:8px 10px;cursor:pointer;font-size:.88rem}.muni-list div:hover{background:var(--soft)}
+canvas{max-width:100%}
+.numbers{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.numcard{background:var(--blue-soft);border-radius:10px;padding:8px 10px;min-width:110px}.numcard strong{display:block;font-size:1.3rem;color:var(--blue)}.numcard span{font-size:.72rem;color:var(--muted)}
+.le-card h3{font-size:1rem;color:var(--blue);text-transform:capitalize}.le-q{border-left:3px solid var(--orange);padding:6px 10px;font-size:.84rem;margin-top:8px;background:#fff8f0;border-radius:0 8px 8px 0}
+@media(max-width:900px){#map-layout{grid-template-columns:1fr}#map{height:460px}.two,.three,.steps{grid-template-columns:1fr}.bar-row{grid-template-columns:140px 1fr 70px}}
+</style>
+</head>
+<body>
+<header id="hdr">
+  <div id="logo"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1E5AA8"/><circle cx="32" cy="18" r="7" fill="#F2C230"/><path d="M32 25v27" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M14 32h36" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M14 32l-6 12h12z" fill="#C8102E"/><path d="M50 32l-6 12h12z" fill="#F28C28"/><path d="M24 54h16" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>JUSTA MT <small>Atlas da Justiça Climática de Mato Grosso</small></div>
+  <nav>
+    <button class="on" data-s="mapa">Mapa</button><button data-s="muni">Município</button><button data-s="rank">Ranking</button><button data-s="comp">Comparar</button><button data-s="rel">Relações</button><button data-s="grupos">Grupos</button><button data-s="entenda">Entenda</button><button data-s="letra">Letramento</button>
+  </nav>
+</header>
+<div class="wrap">
+
+<!-- MAPA -->
+<section class="screen on" id="s-mapa">
+  <div id="map-layout">
+    <div>
+      <div class="card">
+        <h2>O que você quer ver no mapa?</h2>
+        <label class="lbl">Variável</label><select id="m-var"></select>
+        <div id="m-desc" class="note"></div>
+        <label class="lbl">Filtrar por capacidade de defesa civil (ICM)</label>
+        <div class="chips" id="m-classe"><span class="chip on" data-v="">Todas</span><span class="chip" data-v="A">A</span><span class="chip" data-v="B">B</span><span class="chip" data-v="C">C</span><span class="chip" data-v="D">D</span></div>
+        <label class="lbl">Mostrar só</label>
+        <div class="chips" id="m-filtro"><span class="chip on" data-v="">Todos os 141</span><span class="chip red" data-v="deficit">Déficit de justiça adaptativa (53)</span><span class="chip red" data-v="hot3">Hotspots 3 de 4 (30)</span><span class="chip red" data-v="hot5">Hotspots centrais (5)</span></div>
+        <div class="legend" id="m-leg"></div>
+        <div class="note" id="m-n"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h3>Resumo do que está no mapa</h3>
+        <div id="m-stats"></div>
+      </div>
+    </div>
+    <div><div id="map"></div><div class="note">Clique num município para abrir a ficha. Passe o mouse para ver o valor. Fonte de cada variável na aba Entenda.</div></div>
+  </div>
+</section>
+
+<!-- MUNICIPIO -->
+<section class="screen" id="s-muni">
+  <div class="card">
+    <h2>Ficha do município</h2>
+    <div class="muni-search"><input type="text" id="mu-in" placeholder="Digite o nome do município"><div class="muni-list" id="mu-list"></div></div>
+  </div>
+  <div id="mu-out" style="margin-top:18px"></div>
+</section>
+
+<!-- RANKING -->
+<section class="screen" id="s-rank">
+  <div class="card">
+    <h2>Ranking dos 141 municípios</h2>
+    <div class="two">
+      <div><label class="lbl">Variável</label><select id="rk-var"></select></div>
+      <div><label class="lbl">Ordem</label><select id="rk-ord"><option value="desc">Do maior para o menor</option><option value="asc">Do menor para o maior</option></select></div>
+    </div>
+    <div class="chips" id="rk-classe" style="margin-top:10px"><span class="chip on" data-v="">Todas as classes</span><span class="chip" data-v="A">A</span><span class="chip" data-v="B">B</span><span class="chip" data-v="C">C</span><span class="chip" data-v="D">D</span><span class="chip red" data-v="deficit">Só déficit</span></div>
+    <div id="rk-desc" class="note"></div>
+    <div style="overflow:auto;margin-top:12px"><table id="rk-tab"></table></div>
+  </div>
+</section>
+
+<!-- COMPARAR -->
+<section class="screen" id="s-comp">
+  <div class="card">
+    <h2>Município contra município</h2>
+    <div class="two"><div><label class="lbl">Município A</label><select id="cp-a"></select></div><div><label class="lbl">Município B</label><select id="cp-b"></select></div></div>
+    <p class="note">As barras mostram a posição de cada município entre os 141 (percentil). Barra cheia = maior valor do estado. A linha preta é a mediana do estado.</p>
+  </div>
+  <div id="cp-out" style="margin-top:18px"></div>
+</section>
+
+<!-- RELACOES -->
+<section class="screen" id="s-rel">
+  <div class="card">
+    <h2>Duas variáveis, uma relação</h2>
+    <div class="three">
+      <div><label class="lbl">Eixo X</label><select id="re-x"></select></div>
+      <div><label class="lbl">Eixo Y</label><select id="re-y"></select></div>
+      <div><label class="lbl">Colorir por</label><select id="re-c"><option value="classe">Classe ICM</option><option value="deficit">Déficit</option><option value="perfil">Perfil (MFA)</option><option value="none">Nenhuma</option></select>
+        <label class="lbl">Escala</label><select id="re-log"><option value="0">Linear</option><option value="x">Log em X</option><option value="y">Log em Y</option><option value="xy">Log nos dois</option></select></div>
+    </div>
+  </div>
+  <div class="two" style="margin-top:18px">
+    <div class="card"><div style="height:400px;position:relative"><canvas id="re-chart"></canvas></div></div>
+    <div class="card"><h3>Resultado</h3><div id="re-res" class="result"></div><div class="note">Spearman mede se uma sobe quando a outra sobe, sem supor linha reta. Pearson mede a reta. Correlação não é causa: dois lugares podem ser parecidos por um terceiro motivo.</div></div>
+  </div>
+</section>
+
+<!-- GRUPOS -->
+<section class="screen" id="s-grupos">
+  <div class="card">
+    <h2>Uma variável, grupos de municípios</h2>
+    <div class="two">
+      <div><label class="lbl">Variável</label><select id="gr-var"></select></div>
+      <div><label class="lbl">Agrupar por</label><select id="gr-by"><option value="classe">Classe ICM (A, B, C, D)</option><option value="deficit">Déficit sim ou não</option><option value="perfil">Perfil MFA (P1 a P5)</option><option value="hot3">Hotspot 3 de 4 sim ou não</option></select></div>
+    </div>
+  </div>
+  <div class="two" style="margin-top:18px">
+    <div class="card"><div style="height:400px;position:relative"><canvas id="gr-chart"></canvas></div></div>
+    <div class="card"><h3>Resultado</h3><div id="gr-res" class="result"></div><div id="gr-tab" style="margin-top:12px"></div><div class="note">Dois grupos: teste de Mann–Whitney (compara as medianas sem supor distribuição normal). Três ou mais: Kruskal–Wallis. Valor-p abaixo de 0,05 indica diferença difícil de explicar pelo acaso. Com poucos municípios num grupo, desconfie.</div></div>
+  </div>
+</section>
+
+<!-- ENTENDA -->
+<section class="screen" id="s-entenda">
+  <div class="card">
+    <h1>O que é justiça climática, em quatro perguntas</h1>
+    <p class="lead" style="margin:8px 0 16px">A mudança do clima não distribui o dano de forma justa. Quem menos contribuiu para o problema costuma ser quem mais sofre e quem menos tem para responder. Esta plataforma segue essa cadeia em Mato Grosso, município por município.</p>
+    <div class="steps">
+      <div class="s" style="background:var(--red)"><b>1. Quem emite?</b><span>Emissões de gases de efeito estufa do território (SEEG). Em MT, 84% vêm do desmatamento.</span></div>
+      <div class="s" style="background:var(--orange)"><b>2. Quem sofre?</b><span>Desastres registrados: seca, fogo, cheia. 1.902 registros de 1991 a 2024.</span></div>
+      <div class="s" style="background:var(--yellow);color:#111"><b>3. Quem é frágil?</b><span>Idade, renda, água, esgoto, ruralidade. Censo 2022.</span></div>
+      <div class="s" style="background:var(--blue)"><b>4. Quem responde?</b><span>Capacidade de defesa civil: 20 itens, classes A a D (ICM 2026).</span></div>
+    </div>
+  </div>
+  <div class="two" style="margin-top:18px">
+    <div class="card"><h2>Palavras que aparecem aqui</h2><div id="glos"></div></div>
+    <div class="card"><h2>De onde vêm os dados</h2><div id="fontes"></div><h2 style="margin-top:16px">Todas as variáveis</h2><div id="catalogo" style="max-height:520px;overflow:auto"></div></div>
+  </div>
+  <div class="card" style="margin-top:18px"><h2>O que esta plataforma não diz</h2>
+    <p class="note" style="font-size:.88rem">Tudo aqui é sobre municípios, não sobre pessoas. Dizer que um município com mais idosos registra mais desastres não é dizer que os idosos foram mais atingidos. Afetados são contados em cada evento, e a mesma família pode aparecer várias vezes. O número de desastres registrados depende também de o município ter alguém para registrar. Correlação não é causa. Déficit de justiça adaptativa e hotspot são construções analíticas do estudo, não classificações oficiais. Nenhum número aqui foi estimado ou inventado: quando falta, fica vazio.</p></div>
+</section>
+
+<!-- LETRAMENTO -->
+<section class="screen" id="s-letra">
+  <div class="card">
+    <h1>Dicionário de letramento climático</h1>
+    <p class="lead" style="margin:8px 0 14px">31 palavras para entender a emergência climática, cada uma com o que ela significa em Mato Grosso e uma pergunta para levar para a sala de aula.</p>
+    <input type="text" id="le-in" placeholder="Buscar palavra (ex.: seca, calor, justiça)">
+  </div>
+  <div id="le-out" class="grid" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(340px,1fr))"></div>
+</section>
+
+</div>
+<script id="DATA" type="application/json">__DATA__</script>
+<script id="GEO" type="application/json">__GEO__</script>
+<script id="LETRA" type="application/json">__LETRA__</script>
+<script>
+const DB=JSON.parse(document.getElementById('DATA').textContent), GEO=JSON.parse(document.getElementById('GEO').textContent);
+const CAT=DB.catalogo, MU=DB.municipios, BYC={}; MU.forEach(m=>BYC[m.cod]=m);
+const CATK={}; CAT.forEach(c=>CATK[c.k]=c);
+const COL_CL={A:'#1E5AA8',B:'#7FB3E6',C:'#F2C230',D:'#C8102E'}, COL_PF={P1:'#F2C230',P2:'#1E5AA8',P3:'#1f9d74',P4:'#c86bb1',P5:'#F28C28'};
+const PERFIL={P1:'P1 jovem, saneamento deficitário',P2:'P2 maior renda e capacidade',P3:'P3 envelhecido, capacidade baixa',P4:'P4 maior presença quilombola',P5:'P5 maior presença indígena, jovem, rural'};
+const fmt=(v,k)=>{ if(v==null||isNaN(v)) return '—'; const d=CATK[k]?CATK[k].dec:1; const c=CATK[k]; if(c&&c.unid==='sim/não') return v>=1?'Sim':'Não'; return v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); };
+const vals=(k,arr)=>(arr||MU).map(m=>m[k]).filter(v=>v!=null&&!isNaN(v));
+const median=a=>{const s=[...a].sort((x,y)=>x-y);const n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):null};
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const quantile=(a,q)=>{const s=[...a].sort((x,y)=>x-y);const p=(s.length-1)*q;const b=Math.floor(p);return s[b]+(s[b+1]!==undefined?(s[b+1]-s[b])*(p-b):0)};
+const pctl=(v,a)=>100*a.filter(x=>x<v).length/a.length;
+function rank(a){const idx=a.map((v,i)=>[v,i]).sort((x,y)=>x[0]-y[0]);const r=new Array(a.length);let i=0;while(i<idx.length){let j=i;while(j+1<idx.length&&idx[j+1][0]===idx[i][0])j++;const rr=(i+j)/2+1;for(let k=i;k<=j;k++)r[idx[k][1]]=rr;i=j+1;}return r;}
+function pearson(x,y){const n=x.length,mx=mean(x),my=mean(y);let sxy=0,sx=0,sy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sx+=(x[i]-mx)**2;sy+=(y[i]-my)**2;}return sxy/Math.sqrt(sx*sy);}
+function spearman(x,y){return pearson(rank(x),rank(y));}
+function erfc(x){const z=Math.abs(x),t=1/(1+z/2);const r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));return x>=0?r:2-r;}
+const pnorm2=z=>erfc(Math.abs(z)/Math.SQRT2);
+function pcorr(r,n){const t=r*Math.sqrt((n-2)/(1-r*r));return 2*(1-tcdf(Math.abs(t),n-2));}
+function lgamma(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,tmp=x+5.5;tmp-=(x+0.5)*Math.log(tmp);let ser=1.000000000190015;for(let j=0;j<6;j++)ser+=c[j]/++y;return -tmp+Math.log(2.5066282746310005*ser/x);}
+function betacf(a,b,x){let m,aa,c=1,d=1-(a+b)*x/(a+1);if(Math.abs(d)<1e-30)d=1e-30;d=1/d;let h=d;for(m=1;m<=200;m++){const m2=2*m;aa=m*(b-m)*x/((a-1+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;h*=d*c;aa=-(a+m)*(a+b+m)*x/((a+m2)*(a+1+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-7)break;}return h;}
+function ibeta(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b;}
+function tcdf(t,df){const x=df/(df+t*t);return 1-0.5*ibeta(df/2,0.5,x);}
+function gammainc(a,x){if(x<=0)return 0;if(x<a+1){let sum=1/a,del=sum,ap=a;for(let n=0;n<300;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-9)break;}return sum*Math.exp(-x+a*Math.log(x)-lgamma(a));}let b=x+1-a,c=1e30,d=1/b,h=d;for(let i=1;i<300;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<1e-30)d=1e-30;c=b+an/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-9)break;}return 1-Math.exp(-x+a*Math.log(x)-lgamma(a))*h;}
+const pchisq=(x,k)=>1-gammainc(k/2,x/2);
+function mannwhitney(a,b){const all=a.concat(b),r=rank(all);const n1=a.length,n2=b.length;let R1=0;for(let i=0;i<n1;i++)R1+=r[i];const U1=R1-n1*(n1+1)/2,U2=n1*n2-U1,U=Math.min(U1,U2);const N=n1+n2;const cnt={};all.forEach(v=>cnt[v]=(cnt[v]||0)+1);let tie=0;Object.values(cnt).forEach(t=>tie+=t**3-t);const sd=Math.sqrt(n1*n2/12*((N+1)-tie/(N*(N-1))));const z=(U-n1*n2/2)/sd;return{U,p:pnorm2(z),rb:1-2*U1/(n1*n2)};}
+function kruskal(groups){const all=[],g=[];groups.forEach((arr,i)=>arr.forEach(v=>{all.push(v);g.push(i)}));const r=rank(all),N=all.length;const R=groups.map(()=>0),n=groups.map(a=>a.length);r.forEach((v,i)=>R[g[i]]+=v);let H=12/(N*(N+1))*R.reduce((s,Ri,i)=>s+Ri*Ri/n[i],0)-3*(N+1);const cnt={};all.forEach(v=>cnt[v]=(cnt[v]||0)+1);let tie=0;Object.values(cnt).forEach(t=>tie+=t**3-t);H/=(1-tie/(N**3-N));const k=groups.length;return{H,p:pchisq(H,k-1),eps:Math.max(0,(H-k+1)/(N-k))};}
+// ---- navigation
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
+function show(s,cod){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('on',x.id==='s-'+s));if(s==='mapa')setTimeout(()=>map.invalidateSize(),50);if(s==='muni'&&cod)ficha(cod);window.scrollTo(0,0);}
+// ---- selects
+function fillVars(sel,def){const groups={};CAT.forEach(c=>{(groups[c.grupo]=groups[c.grupo]||[]).push(c)});sel.innerHTML=Object.keys(groups).map(g=>`<optgroup label="${g}">`+groups[g].map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</optgroup>').join('');sel.value=def;}
+const munisSorted=[...MU].sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+function fillMunis(sel,def){sel.innerHTML=munisSorted.map(m=>`<option value="${m.cod}">${m.nome}</option>`).join('');sel.value=def;}
+// ---- MAPA
+const map=L.map('map',{zoomControl:true,attributionControl:true,scrollWheelZoom:true}).setView([-13.0,-55.9],6);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:12,opacity:.35,attribution:'© OpenStreetMap'}).addTo(map);
+let mVar='recorrencia',mClasse='',mFiltro='',layer=null;
+const RAMP=['#FEF4E8','#F9C98C','#F28C28','#D9482B','#8B0000'], RAMPG=['#8B0000','#D9482B','#F28C28','#F9C98C','#E8F1FA'];
+function mapFilter(m){if(mClasse&&m.classe!==mClasse)return false;if(mFiltro==='deficit'&&!m.deficit)return false;if(mFiltro==='hot3'&&!m.hot3)return false;if(mFiltro==='hot5'&&!m.hot5)return false;return true;}
+function drawMap(){const c=CATK[mVar];const active=MU.filter(mapFilter);const v=vals(mVar,active);let breaks=[],ramp=c.dir==='good'?RAMPG:RAMP;
+  const isBin=c.unid==='sim/não';
+  if(!isBin&&v.length>=5){breaks=[0.2,0.4,0.6,0.8].map(q=>quantile(v,q));}
+  const cls=x=>{if(x==null)return -1;if(isBin)return x>=1?4:0;let i=0;while(i<breaks.length&&x>breaks[i])i++;return i;};
+  if(layer)map.removeLayer(layer);
+  layer=L.geoJSON(GEO,{style:f=>{const m=BYC[f.properties.cod];const on=mapFilter(m);const k=cls(m[mVar]);return{fillColor:!on?'#f3f4f6':(k<0?'#e5e7eb':ramp[k]),fillOpacity:on?0.9:0.45,color:'#ffffff',weight:0.8};},
+    onEachFeature:(f,l)=>{const m=BYC[f.properties.cod];l.bindTooltip(`<b>${m.nome}</b><br>${c.label}: ${fmt(m[mVar],mVar)} ${c.unid==='sim/não'?'':c.unid}<br>Classe ICM ${m.classe}${m.deficit?' · déficit':''}`,{className:'jt',sticky:true});l.on('click',()=>show('muni',m.cod));l.on('mouseover',()=>l.setStyle({weight:2.2,color:'#111827'}));l.on('mouseout',()=>layer.resetStyle(l));}}).addTo(map);
+  // legend
+  let html=`<h3 style="margin-top:8px">${c.label} <span style="font-weight:400;color:var(--muted)">(${c.unid})</span></h3>`;
+  if(isBin){html+=`<div class="row"><span class="sw" style="background:${ramp[4]}"></span>Sim</div><div class="row"><span class="sw" style="background:${ramp[0]}"></span>Não</div>`;}
+  else{const lo=Math.min(...v),hi=Math.max(...v);const b=[lo,...breaks,hi];for(let i=0;i<5;i++)html+=`<div class="row"><span class="sw" style="background:${ramp[i]}"></span>${fmt(b[i],mVar)} a ${fmt(b[i+1],mVar)}</div>`;html+=`<div class="row"><span class="sw" style="background:#f3f4f6"></span>fora do filtro</div>`;}
+  document.getElementById('m-leg').innerHTML=html;document.getElementById('m-desc').textContent=c.desc;
+  document.getElementById('m-n').textContent=isBin?'':(c.dir==='good'?'Escala: vermelho é pior (valor baixo), azul claro é melhor.':c.dir==='bad'?'Escala: vermelho escuro é pior (valor alto).':'Escala: do claro ao escuro, do menor ao maior. Classes por quintis.');
+  // stats
+  if(v.length){const s=`<div class="stat-line"><span>Municípios no filtro</span><b>${active.length}</b></div><div class="stat-line"><span>Mediana</span><b>${fmt(median(v),mVar)}</b></div><div class="stat-line"><span>Média</span><b>${fmt(mean(v),mVar)}</b></div><div class="stat-line"><span>Mínimo</span><b>${fmt(Math.min(...v),mVar)}</b></div><div class="stat-line"><span>Máximo</span><b>${fmt(Math.max(...v),mVar)}</b></div>`;
+    const top=[...active].filter(m=>m[mVar]!=null).sort((a,b)=>b[mVar]-a[mVar]).slice(0,5);document.getElementById('m-stats').innerHTML=s+`<div class="note" style="margin-top:8px">Cinco maiores: ${top.map(m=>`<a href="#" onclick="show('muni','${m.cod}');return false">${m.nome}</a> (${fmt(m[mVar],mVar)})`).join(', ')}</div>`;}
+  else document.getElementById('m-stats').innerHTML='<div class="note">Sem dado para este filtro.</div>';
+}
+fillVars(document.getElementById('m-var'),'recorrencia');document.getElementById('m-var').onchange=e=>{mVar=e.target.value;drawMap();};
+function chips(id,cb){document.querySelectorAll('#'+id+' .chip').forEach(ch=>ch.onclick=()=>{document.querySelectorAll('#'+id+' .chip').forEach(x=>x.classList.remove('on'));ch.classList.add('on');cb(ch.dataset.v);});}
+chips('m-classe',v=>{mClasse=v;drawMap();});chips('m-filtro',v=>{mFiltro=v;drawMap();});
+drawMap();
+// ---- MUNICIPIO
+const muIn=document.getElementById('mu-in'),muList=document.getElementById('mu-list');
+muIn.oninput=()=>{const q=muIn.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const hits=munisSorted.filter(m=>m.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(q)).slice(0,12);muList.innerHTML=hits.map(m=>`<div data-c="${m.cod}">${m.nome} <span style="color:var(--muted)">· classe ${m.classe}</span></div>`).join('');muList.style.display=hits.length&&q?'block':'none';muList.querySelectorAll('div').forEach(d=>d.onclick=()=>{muList.style.display='none';ficha(d.dataset.c);});};
+document.addEventListener('click',e=>{if(!e.target.closest('.muni-search'))muList.style.display='none';});
+function barRows(m,keys,other){return keys.map(k=>{const c=CATK[k];const all=vals(k);const v=m[k];if(v==null)return `<div class="bar-row"><div class="name">${c.label}<small>${c.unid}</small></div><div class="bar"></div><div class="val">—</div></div>`;
+  const p=pctl(v,all),med=pctl(median(all),all);const bad=c.dir==='bad'?p>50:c.dir==='good'?p<50:false;const col=c.dir==='n'?'var(--blue)':bad?'var(--red)':'var(--green)';
+  let ob='';if(other&&other[k]!=null){ob=`<i style="width:${pctl(other[k],all)}%;background:#9ca3af;opacity:.45;top:5px"></i>`;}
+  return `<div class="bar-row"><div class="name">${c.label}<small>${c.unid}</small></div><div class="bar"><i style="width:${Math.max(2,p)}%;background:${col}"></i>${ob}<s style="left:${med}%"></s></div><div class="val">${fmt(v,k)}</div></div>`;}).join('');}
+const GROUPS=['Pessoas','Condições de vida','Escola','Capacidade de resposta','Desastres','Emissões','Ambiente','Síntese'];
+function ficha(cod){const m=BYC[cod];muIn.value=m.nome;const tag=`<span class="tag tag${m.classe}">ICM classe ${m.classe}</span> ${m.deficit?'<span class="tag tagDef">Déficit de justiça adaptativa</span>':''} ${m.hot5?'<span class="tag tagDef">Hotspot central</span>':m.hot3?'<span class="tag tagDef">Hotspot 3 de 4</span>':''} <span class="tag" style="background:var(--soft)">${PERFIL[m.perfil]||m.perfil}</span>`;
+  const kp=[['pop','pessoas'],['recorrencia','desastres por mil hab.'],['icm_soma','itens de defesa civil (0 a 20)'],['sem_esgoto','% sem esgoto'],['emis_pc','t CO2e por habitante (1990–2024)'],['escolas','escolas']].map(([k,l])=>`<div class="k"><div class="v">${fmt(m[k],k)}</div><div class="l">${l}</div></div>`).join('');
+  let html=`<div class="card"><h1>${m.nome}</h1><div style="margin:8px 0 14px">${tag}</div><div class="kpi">${kp}</div><p class="note">Como ler: barra colorida = posição do município entre os 141 (percentil); linha preta = mediana do estado; vermelho = pior que a mediana no sentido da vulnerabilidade, verde = melhor, azul = descritivo.</p></div>`;
+  GROUPS.forEach(g=>{const ks=CAT.filter(c=>c.grupo===g).map(c=>c.k);html+=`<div class="card" style="margin-top:14px"><h3>${g}</h3>${barRows(m,ks)}</div>`;});
+  document.getElementById('mu-out').innerHTML=html;show('muni');}
+// ---- RANKING
+let rkVar='recorrencia',rkOrd='desc',rkF='';
+fillVars(document.getElementById('rk-var'),'recorrencia');document.getElementById('rk-var').onchange=e=>{rkVar=e.target.value;drawRank();};document.getElementById('rk-ord').onchange=e=>{rkOrd=e.target.value;drawRank();};chips('rk-classe',v=>{rkF=v;drawRank();});
+function drawRank(){const c=CATK[rkVar];document.getElementById('rk-desc').textContent=c.desc;let arr=MU.filter(m=>m[rkVar]!=null&&(rkF===''||(rkF==='deficit'?m.deficit:m.classe===rkF)));arr.sort((a,b)=>rkOrd==='desc'?b[rkVar]-a[rkVar]:a[rkVar]-b[rkVar]);const all=vals(rkVar);
+  document.getElementById('rk-tab').innerHTML=`<thead><tr><th>#</th><th>Município</th><th>Classe</th><th>Déficit</th><th class="num">${c.label} (${c.unid})</th><th class="num">Percentil</th><th class="num">População</th></tr></thead><tbody>`+arr.map((m,i)=>`<tr onclick="show('muni','${m.cod}')"><td>${i+1}</td><td>${m.nome}</td><td><span class="tag tag${m.classe}">${m.classe}</span></td><td>${m.deficit?'sim':''}</td><td class="num"><b>${fmt(m[rkVar],rkVar)}</b></td><td class="num">${pctl(m[rkVar],all).toFixed(0)}</td><td class="num">${fmt(m.pop,'pop')}</td></tr>`).join('')+'</tbody>';}
+drawRank();
+// ---- COMPARAR
+const cpA=document.getElementById('cp-a'),cpB=document.getElementById('cp-b');fillMunis(cpA,'5103403');fillMunis(cpB,'5106828');cpA.onchange=drawComp;cpB.onchange=drawComp;
+function drawComp(){const a=BYC[cpA.value],b=BYC[cpB.value];let html=`<div class="two">`;[a,b].forEach(m=>{html+=`<div class="card"><h2>${m.nome}</h2><span class="tag tag${m.classe}">ICM ${m.classe}</span> ${m.deficit?'<span class="tag tagDef">déficit</span>':''} <span class="tag" style="background:var(--soft)">${m.perfil}</span><div class="kpi" style="margin-top:10px">${[['pop','pessoas'],['recorrencia','desastres/mil hab.'],['sem_esgoto','% sem esgoto'],['emis_pc','t CO2e/hab']].map(([k,l])=>`<div class="k"><div class="v">${fmt(m[k],k)}</div><div class="l">${l}</div></div>`).join('')}</div></div>`;});html+='</div>';
+  GROUPS.forEach(g=>{const ks=CAT.filter(c=>c.grupo===g).map(c=>c.k);html+=`<div class="card" style="margin-top:14px"><h3>${g}</h3><div class="two"><div><div class="note" style="margin:0 0 6px"><b>${a.nome}</b> (cinza: ${b.nome})</div>${barRows(a,ks,b)}</div><div><div class="note" style="margin:0 0 6px"><b>${b.nome}</b> (cinza: ${a.nome})</div>${barRows(b,ks,a)}</div></div></div>`;});
+  document.getElementById('cp-out').innerHTML=html;}
+drawComp();
+// ---- RELACOES
+let reChart=null;const reX=document.getElementById('re-x'),reY=document.getElementById('re-y'),reC=document.getElementById('re-c'),reL=document.getElementById('re-log');fillVars(reX,'emis_pc');fillVars(reY,'recorrencia');[reX,reY,reC,reL].forEach(s=>s.onchange=drawRel);
+function drawRel(){const kx=reX.value,ky=reY.value,cx=CATK[kx],cy=CATK[ky];const pts=MU.filter(m=>m[kx]!=null&&m[ky]!=null);const lg=reL.value;const use=pts.filter(m=>!(lg.includes('x')&&m[kx]<=0)&&!(lg.includes('y')&&m[ky]<=0));
+  const x=use.map(m=>m[kx]),y=use.map(m=>m[ky]);const rs=spearman(x,y),rp=pearson(lg.includes('x')?x.map(Math.log10):x,lg.includes('y')?y.map(Math.log10):y);const n=x.length;
+  document.getElementById('re-res').innerHTML=`<div>Spearman ρ = <b>${rs.toFixed(2)}</b> (p ${fmtp(pcorr(rs,n))})</div><div>Pearson r = <b>${rp.toFixed(2)}</b> (p ${fmtp(pcorr(rp,n))})</div><div>n = ${n} municípios</div><div style="margin-top:6px">${interp(rs)}</div>`;
+  const by=reC.value;const groups={};use.forEach(m=>{const g=by==='none'?'Municípios':by==='deficit'?(m.deficit?'Déficit':'Demais'):by==='perfil'?m.perfil:'Classe '+m.classe;(groups[g]=groups[g]||[]).push({x:m[kx],y:m[ky],nome:m.nome});});
+  const colorOf=g=>by==='classe'?COL_CL[g.slice(-1)]:by==='deficit'?(g==='Déficit'?'#7A0177':'#9ca3af'):by==='perfil'?COL_PF[g]:'#1E5AA8';
+  const ds=Object.keys(groups).sort().map(g=>({label:g,data:groups[g],backgroundColor:colorOf(g),pointRadius:4,pointHoverRadius:6}));
+  if(reChart)reChart.destroy();reChart=new Chart(document.getElementById('re-chart'),{type:'scatter',data:{datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.raw.nome}: ${fmt(c.raw.x,kx)}, ${fmt(c.raw.y,ky)}`}}},scales:{x:{type:lg.includes('x')?'logarithmic':'linear',title:{display:true,text:`${cx.label} (${cx.unid})`}},y:{type:lg.includes('y')?'logarithmic':'linear',title:{display:true,text:`${cy.label} (${cy.unid})`}}}}});}
+const fmtp=p=>p<0.001?'< 0,001':'= '+p.toFixed(3).replace('.',',');
+function interp(r){const a=Math.abs(r);const f=a<0.1?'praticamente nenhuma relação':a<0.3?'relação fraca':a<0.5?'relação moderada':'relação forte';return `Leitura: ${f}${a>=0.1?(r>0?', no mesmo sentido (uma sobe, a outra sobe)':', em sentidos opostos (uma sobe, a outra desce)'):''}.`;}
+drawRel();
+// ---- GRUPOS
+let grChart=null;const grV=document.getElementById('gr-var'),grB=document.getElementById('gr-by');fillVars(grV,'recorrencia');grV.onchange=drawGr;grB.onchange=drawGr;
+function drawGr(){const k=grV.value,c=CATK[k],by=grB.value;const groups={};MU.forEach(m=>{if(m[k]==null)return;const g=by==='classe'?m.classe:by==='deficit'?(m.deficit?'Déficit':'Demais'):by==='perfil'?m.perfil:(m.hot3?'Hotspot 3/4':'Demais');(groups[g]=groups[g]||[]).push(m[k]);});
+  const names=Object.keys(groups).sort();const meds=names.map(g=>median(groups[g]));const cols=names.map(g=>by==='classe'?COL_CL[g]:by==='perfil'?COL_PF[g]:(g==='Déficit'||g==='Hotspot 3/4')?'#7A0177':'#9ca3af');
+  if(grChart)grChart.destroy();grChart=new Chart(document.getElementById('gr-chart'),{type:'bar',data:{labels:names.map((g,i)=>`${by==='classe'?'Classe '+g:g} (n=${groups[g].length})`),datasets:[{label:'Mediana',data:meds,backgroundColor:cols},{label:'Média',data:names.map(g=>mean(groups[g])),backgroundColor:cols.map(x=>x+'66')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{title:{display:true,text:`${c.label} (${c.unid})`}}}}});
+  let res='';if(names.length===2){const t=mannwhitney(groups[names[0]],groups[names[1]]);const hi=meds[0]>=meds[1]?0:1,lo=1-hi;const d=meds[hi]-meds[lo];res=`<div>Mediana em <b>${names[0]}</b>: ${fmt(meds[0],k)} · em <b>${names[1]}</b>: ${fmt(meds[1],k)}</div><div><b>${names[hi]}</b> tem mediana maior em <b>${fmt(d,k)}</b>${meds[lo]?` (${(100*d/meds[lo]).toFixed(0)}% acima)`:''}</div><div>Mann–Whitney: p ${fmtp(t.p)}; efeito rank-biserial = ${Math.abs(t.rb).toFixed(2)}</div><div style="margin-top:6px">${t.p<0.05?'Os dois grupos diferem mais do que o acaso explicaria.':'A diferença pode ser obra do acaso.'}</div>`;}
+  else{const t=kruskal(names.map(g=>groups[g]));res=`<div>Kruskal–Wallis: H = ${t.H.toFixed(1)}; p ${fmtp(t.p)}; ε² = ${t.eps.toFixed(2)}</div><div style="margin-top:6px">${t.p<0.05?'Pelo menos um grupo difere dos outros mais do que o acaso explicaria.':'As diferenças entre grupos podem ser obra do acaso.'}</div>`;}
+  document.getElementById('gr-res').innerHTML=res;
+  document.getElementById('gr-tab').innerHTML=`<table><thead><tr><th>Grupo</th><th class="num">n</th><th class="num">Mediana</th><th class="num">Média</th><th class="num">Mín</th><th class="num">Máx</th></tr></thead><tbody>${names.map((g,i)=>`<tr><td>${by==='classe'?'Classe '+g:g}</td><td class="num">${groups[g].length}</td><td class="num">${fmt(meds[i],k)}</td><td class="num">${fmt(mean(groups[g]),k)}</td><td class="num">${fmt(Math.min(...groups[g]),k)}</td><td class="num">${fmt(Math.max(...groups[g]),k)}</td></tr>`).join('')}</tbody></table>`;}
+drawGr();
+// ---- ENTENDA
+const GLOS=[['Justiça climática','Justiça que liga desenvolvimento e direitos humanos para enfrentar a mudança do clima com foco nas pessoas: protege os mais vulneráveis e divide de forma justa ônus e benefícios (definição do IPCC, 2022). Tem três dimensões: distribuição (quem fica com o dano e quem fica com o ganho), reconhecimento (quem é visto) e participação (quem decide).'],
+['Recorrência de desastres','Quantos desastres foram registrados oficialmente para cada mil habitantes entre 1991 e 2024. Mede repetição, não gravidade. Um município pequeno com sete decretos de seca tem recorrência alta.'],
+['Afetados-evento','Pessoas afetadas somadas em cada decreto de desastre. A mesma família aparece em cada seca que o município declarou. Por isso não são pessoas únicas, e um município pode ter mais afetados-evento do que habitantes.'],
+['ICM, capacidade de defesa civil','Índice de Capacidade Municipal em proteção e defesa civil, do governo federal (2026). São 20 perguntas de sim ou não: o município tem plano de contingência? mapa de risco? orçamento? núcleo comunitário? sistema de alerta? campanhas educativas? Com as respostas, o porte do município e se ele é prioritário, o governo classifica em A (maior capacidade), B, C ou D (menor). Em Mato Grosso, 74 dos 141 municípios são D.'],
+['Déficit de justiça adaptativa','Nome dado aqui aos municípios onde o desastre se repete mais que na metade do estado e, ao mesmo tempo, a capacidade de defesa civil é baixa (classe C ou D). São 53. É uma forma de olhar os dados, não uma classificação oficial.'],
+['Hotspot','Município em déficit que também está pior que a metade do estado em casas sem esgoto, casas sem água, proporção de idosos e renda. Cinco cumprem os quatro critérios (Novo Santo Antônio, Figueirópolis D\'Oeste, Indiavaí, Castanheira e Carlinda); 30 cumprem pelo menos três.'],
+['Perfil (P1 a P5)','Uma forma de agrupar municípios parecidos entre si. Uma análise estatística chamada MFA (análise de fatores múltiplos) olhou ao mesmo tempo idade, cor, saneamento, renda, ruralidade e capacidade de defesa civil, e juntou os municípios que se assemelham. Saíram cinco grupos: P1, jovem e com saneamento deficitário (46 municípios); P2, maior renda e capacidade (33); P3, envelhecido e de capacidade baixa (50); P4, maior presença quilombola (6, no Pantanal e na Baixada Cuiabana); P5, maior presença indígena, jovem e rural (6). O nome descreve o grupo, não julga as pessoas.'],
+['Eixo de síntese (PC1)','Um número só que resume 14 medidas do município. Vem de uma técnica chamada análise de componentes principais (PCA), que procura a direção em que os municípios mais se diferenciam. Aqui, essa direção junta, de um lado, população, renda e capacidade; do outro, ruralidade, falta de esgoto e de água, emissão por habitante e desastre repetido. Quanto maior o número, mais o município está no lado vulnerável. Cuiabá tem o menor valor; Rondolândia, o maior.'],
+['SEEG, emissões','Inventário de emissões de gases de efeito estufa por município, feito pelo Observatório do Clima. Conta o que foi emitido no território: floresta derrubada, boi, combustível, lixo. A emissão fica registrada onde a floresta caiu, mesmo que o lucro tenha ido para outro lugar.'],
+['Emissão por habitante','Tudo o que o território emitiu de 1990 a 2024 dividido pela população. É alta onde muita floresta foi convertida por pouca gente, como nos municípios de fronteira.'],
+['IPS, progresso social','Índice de Progresso Social (2026): mede, de 0 a 100, se as pessoas têm o básico (água, moradia, segurança), bem-estar (educação, saúde, informação, ambiente) e oportunidades (direitos, inclusão, ensino superior). Não usa renda.'],
+['IVCM','Índice de vulnerabilidade climática publicado junto com o IPS. Atenção: ele aponta para os municípios grandes, enquanto a recorrência aponta para os pequenos. Medem coisas diferentes.'],
+['Percentil','Posição do município entre os 141. Percentil 90 quer dizer que ele está acima de 90% dos outros naquela variável.'],
+['Mediana','O valor do meio: metade dos municípios está acima, metade abaixo. Menos sensível a valores extremos que a média.'],
+['Spearman e Pearson','Duas formas de medir se duas variáveis andam juntas, de -1 a +1. Spearman usa a ordem dos municípios e não exige linha reta; Pearson mede a reta. Valor perto de zero: não andam juntas. Correlação não é causa.'],
+['Mann–Whitney e Kruskal–Wallis','Testes que perguntam se a diferença entre grupos de municípios é grande demais para ser acaso. O primeiro compara dois grupos; o segundo, três ou mais. Valor-p abaixo de 0,05 é a convenção para dizer que a diferença é real.']];
+document.getElementById('glos').innerHTML=GLOS.map(g=>`<div class="glos"><b>${g[0]}</b>${g[1]}</div>`).join('');
+document.getElementById('fontes').innerHTML=['<b>Atlas Digital de Desastres no Brasil v1.1</b>, MIDR/Sedec: desastres 1991 a 2024.','<b>Censo Demográfico 2022</b>, IBGE: população, idade, cor, saneamento, renda.','<b>ICM 2026</b>, MIDR/Sedec: capacidade em defesa civil.','<b>SEEG Coleção 13.0</b>, Observatório do Clima: emissões 1990 a 2024.','<b>IPS Brasil 2026</b>: progresso social, PIB per capita, IVCM.','<b>Censo Escolar 2025</b>, INEP: escolas por município.','<b>Análises deste projeto</b> (UNEMAT, Cáceres): déficit, hotspots, perfis e eixo de síntese, construídos a partir das fontes acima.'].map(f=>`<div class="stat-line" style="justify-content:flex-start">${f}</div>`).join('');
+const LE=JSON.parse(document.getElementById('LETRA').textContent);
+function drawLe(){const q=(document.getElementById('le-in').value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const n=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');document.getElementById('le-out').innerHTML=LE.filter(t=>!q||n(t.w+' '+t.d).includes(q)).map(t=>`<div class="card le-card"><h3>${t.w.toLowerCase()}</h3><p style="font-size:.9rem">${t.d}</p>${t.ev?`<div class="note" style="margin-top:8px;font-weight:700;color:var(--text)">Em Mato Grosso</div>${t.ev}`:''}${t.q?`<div class="le-q">Para a sala de aula: ${t.q}</div>`:''}<div class="note">${t.src||''}</div></div>`).join('')||'<div class="card">Nenhuma palavra encontrada.</div>';}
+document.getElementById('le-in').oninput=drawLe;drawLe();
+document.getElementById('catalogo').innerHTML=CAT.map(c=>`<div class="stat-line" style="flex-direction:column;align-items:flex-start;gap:2px"><b>${c.label} <span style="font-weight:400;color:var(--muted)">(${c.unid} · ${c.grupo})</span></b><span style="font-size:.8rem;color:var(--muted)">${c.desc}</span></div>`).join('');
+</script>
+</body>
+</html>
