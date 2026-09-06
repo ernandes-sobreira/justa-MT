@@ -5,24 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JUSTA MT — Atlas da Justiça Climática de Mato Grosso</title>
 <meta name="description" content="Quem emite, quem sofre e quem consegue responder: 141 municípios de Mato Grosso em mapas, rankings, comparações e estatística interativa.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E5AA8'/%3E%3Ccircle cx='32' cy='18' r='7' fill='%23F2C230'/%3E%3Cpath d='M32 25v27' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32h36' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32l-6 12h12z' fill='%23C8102E'/%3E%3Cpath d='M50 32l-6 12h12z' fill='%23F28C28'/%3E%3Cpath d='M24 54h16' stroke='%23fff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0e14'/%3E%3Ccircle cx='32' cy='18' r='7' fill='%23ffd23d'/%3E%3Cpath d='M32 25v27' stroke='%2319e3ff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32h36' stroke='%2319e3ff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M14 32l-6 12h12z' fill='%23ff3d8a'/%3E%3Cpath d='M50 32l-6 12h12z' fill='%23ff8a3d'/%3E%3Cpath d='M24 54h16' stroke='%2319e3ff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#ffffff;--surface:#ffffff;--soft:#f6f7fb;--border:#e5e7eb;--text:#111827;--muted:#6b7280;
-  --blue:#1E5AA8;--blue-soft:#e8f0fa;--red:#C8102E;--red-soft:#fdecef;--orange:#F28C28;--yellow:#F2C230;--green:#1f9d74;
-  --r:14px;--shadow:0 10px 30px rgba(17,24,39,.06);--hdr:64px;}
+:root{--bg:#0b0e14;--surface:#131824;--soft:#1a2130;--border:#242c3d;--text:#eef2f8;--muted:#9aa4b8;
+  --blue:#19e3ff;--blue-soft:#0f3a45;--red:#ff3d8a;--red-soft:#3a1224;--orange:#ff8a3d;--yellow:#ffd23d;--green:#8cff5a;
+  --r:14px;--shadow:0 10px 30px rgba(0,0,0,.35);--hdr:64px;}
+::selection{background:var(--blue);color:#000}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
-#hdr{position:sticky;top:0;z-index:1000;height:var(--hdr);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:0 20px}
-#logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;letter-spacing:-.03em;color:var(--blue);white-space:nowrap}
+#hdr{position:sticky;top:0;z-index:1000;min-height:var(--hdr);background:rgba(11,14,20,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;padding:8px 20px;flex-wrap:wrap}
+#logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;letter-spacing:-.03em;color:var(--blue);white-space:nowrap;text-shadow:0 0 18px rgba(25,227,255,.45)}
 #logo svg{width:32px;height:32px}
 #logo small{font-weight:500;color:var(--muted);font-size:.8rem;letter-spacing:0;margin-left:4px}
-nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 nav button{background:none;border:1px solid transparent;border-radius:10px;padding:8px 12px;font:inherit;font-weight:600;font-size:.86rem;color:var(--muted);cursor:pointer}
-nav button.on{background:var(--blue-soft);color:var(--blue);border-color:#cfe0f5}
+nav button.on{background:var(--blue-soft);color:var(--blue);border-color:var(--blue);box-shadow:0 0 12px rgba(25,227,255,.35)}
 nav button:hover{color:var(--blue)}
 .wrap{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
 .screen{display:none}.screen.on{display:block}
@@ -33,38 +34,40 @@ h2{font-size:1.15rem;font-weight:700;margin-bottom:10px}
 h3{font-size:.95rem;font-weight:700;margin-bottom:6px}
 p.lead{color:var(--muted);font-size:1rem;max-width:760px}
 label.lbl{display:block;font-size:.76rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
-select,input[type=text]{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 10px;font:inherit;font-size:.92rem;background:#fff;color:var(--text)}
-select:focus,input:focus{outline:2px solid #cfe0f5;border-color:var(--blue)}
+select,input[type=text]{width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 10px;font:inherit;font-size:.92rem;background:var(--soft);color:var(--text)}select option{background:#131824;color:#eef2f8}
+select:focus,input:focus{outline:2px solid rgba(25,227,255,.35);border-color:var(--blue)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.chip{border:1px solid var(--border);background:#fff;border-radius:999px;padding:5px 11px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--muted)}
-.chip.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.chip.red.on{background:var(--red);border-color:var(--red)}
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;color:var(--text)}
-.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chip{border:1px solid var(--border);background:var(--soft);border-radius:999px;padding:5px 11px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--muted)}
+.chip.on{background:var(--blue);color:#001018;border-color:var(--blue);box-shadow:0 0 12px rgba(25,227,255,.45)}
+.chip.red.on{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 0 12px rgba(255,61,138,.45)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--soft);border-radius:10px;padding:8px 12px;font:inherit;font-size:.86rem;font-weight:600;cursor:pointer;color:var(--text)}
+.btn.primary{background:var(--blue);color:#001018;border-color:var(--blue);box-shadow:0 0 12px rgba(25,227,255,.4)}
 .btn.sm{padding:5px 9px;font-size:.78rem}
 /* mapa */
 #map-layout{display:grid;grid-template-columns:340px 1fr;gap:18px}
-#map{height:640px;border-radius:var(--r);border:1px solid var(--border);background:#fff}
+#map{height:640px;border-radius:var(--r);border:1px solid var(--border);background:#0b0e14}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.7) contrast(.9);opacity:.5}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}.leaflet-control-attribution{background:rgba(11,14,20,.7)!important;color:var(--muted)!important}.leaflet-control-attribution a{color:var(--blue)!important}
 .legend{margin-top:12px}
 .legend .row{display:flex;align-items:center;gap:8px;font-size:.82rem;margin:3px 0}
 .legend .sw{width:22px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.08)}
 .leaflet-container{font:inherit}
-.leaflet-tooltip.jt{background:#111827;color:#fff;border:none;border-radius:8px;padding:6px 9px;font-size:.8rem;box-shadow:none}
+.leaflet-tooltip.jt{background:#eef2f8;color:#0b0e14;border:none;border-radius:8px;padding:6px 9px;font-size:.8rem;box-shadow:none}
 .leaflet-tooltip.jt::before{display:none}
 .stat-line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:.86rem}
 .stat-line b{font-weight:700}
 .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.kpi .k{background:var(--soft);border-radius:12px;padding:12px 14px}
-.kpi .k .v{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.kpi .k{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.kpi .k .v{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;color:var(--blue)}
 .kpi .k .l{font-size:.78rem;color:var(--muted)}
 .tag{display:inline-block;border-radius:6px;padding:2px 8px;font-size:.74rem;font-weight:700}
-.tagA{background:#dbe7f7;color:#1E5AA8}.tagB{background:#e6f0fb;color:#2f6fbd}.tagC{background:#fdf1cf;color:#8a6a00}.tagD{background:#fde3e7;color:#C8102E}
-.tagDef{background:#f3e6f2;color:#7A0177}
+.tagA{background:#0f3a45;color:#19e3ff}.tagB{background:#10303a;color:#7de7f7}.tagC{background:#3a2e0f;color:#ffd23d}.tagD{background:#3a1224;color:#ff3d8a}
+.tagDef{background:#2a1238;color:#d98cff}
 /* municipio */
 .bar-row{display:grid;grid-template-columns:230px 1fr 90px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:.84rem}
 .bar-row .bar{height:10px;background:var(--soft);border-radius:6px;position:relative;overflow:hidden}
 .bar-row .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
-.bar-row .bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:#111827;text-decoration:none}
+.bar-row .bar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:#eef2f8;text-decoration:none}
 .bar-row .val{text-align:right;font-weight:700}
 .bar-row .name{color:var(--text)}
 .bar-row .name small{display:block;color:var(--muted);font-weight:400;font-size:.72rem}
@@ -73,6 +76,7 @@ th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left}
 th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer;white-space:nowrap}
 td.num,th.num{text-align:right}
 tr.hl td{background:var(--blue-soft)}
+thead th{background:var(--surface)}
 tbody tr{cursor:pointer}tbody tr:hover td{background:var(--soft)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
@@ -82,32 +86,44 @@ tbody tr{cursor:pointer}tbody tr:hover td{background:var(--soft)}
 .glos{border-left:4px solid var(--blue);padding:8px 12px;background:var(--soft);border-radius:0 10px 10px 0;margin:8px 0}
 .glos b{display:block;color:var(--blue)}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.steps .s{border-radius:12px;padding:14px;color:#fff}
+.steps .s{border-radius:12px;padding:14px;color:#0b0e14}
 .steps .s b{display:block;font-size:1.05rem;margin-bottom:4px}
 .steps .s span{font-size:.84rem;opacity:.92}
 .muni-search{position:relative}
-.muni-list{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:10px;max-height:240px;overflow:auto;z-index:50;display:none;box-shadow:var(--shadow)}
+.muni-list{position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:240px;overflow:auto;z-index:50;display:none;box-shadow:var(--shadow)}
 .muni-list div{padding:8px 10px;cursor:pointer;font-size:.88rem}.muni-list div:hover{background:var(--soft)}
 canvas{max-width:100%}
 .cmp-row{display:grid;grid-template-columns:1.6fr 80px 1fr 80px 70px;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:.84rem}
 .cmp-row .bars{display:flex;flex-direction:column;gap:3px}.cmp-row .bars div{height:8px;border-radius:5px;background:var(--soft);position:relative;overflow:hidden}.cmp-row .bars i{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
 .cmp-row .va{text-align:right;font-weight:700;color:var(--blue)}.cmp-row .vb{text-align:left;font-weight:700;color:var(--orange)}.cmp-row .win{font-size:.72rem;font-weight:700;text-align:center;border-radius:6px;padding:2px 4px}
-.win.a{background:var(--blue-soft);color:var(--blue)}.win.b{background:#fff1e6;color:#b45d0f}.win.e{background:var(--soft);color:var(--muted)}
-.preset{background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--text)}.preset:hover,.preset.on{background:var(--red);color:#fff;border-color:var(--red)}
-.reading{background:#fff8f0;border-left:4px solid var(--orange);border-radius:0 10px 10px 0;padding:10px 12px;font-size:.92rem;margin-top:10px}
+.win.a{background:var(--blue-soft);color:var(--blue)}.win.b{background:#3a2412;color:var(--orange)}.win.e{background:var(--soft);color:var(--muted)}
+.preset{background:var(--soft);border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--text)}.preset:hover,.preset.on{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 0 12px rgba(255,61,138,.45)}
+.reading{background:#22180f;border-left:4px solid var(--orange);border-radius:0 10px 10px 0;padding:10px 12px;font-size:.92rem;margin-top:10px}
 @media(max-width:700px){.cmp-row{grid-template-columns:1fr 64px 1fr 64px 52px;font-size:.78rem}}
 .numbers{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.numcard{background:var(--blue-soft);border-radius:10px;padding:8px 10px;min-width:110px}.numcard strong{display:block;font-size:1.3rem;color:var(--blue)}.numcard span{font-size:.72rem;color:var(--muted)}
-.le-card h3{font-size:1rem;color:var(--blue);text-transform:capitalize}.le-q{border-left:3px solid var(--orange);padding:6px 10px;font-size:.84rem;margin-top:8px;background:#fff8f0;border-radius:0 8px 8px 0}
-@media(max-width:900px){#map-layout{grid-template-columns:1fr}#map{height:460px}.two,.three,.steps{grid-template-columns:1fr}.bar-row{grid-template-columns:140px 1fr 70px}}
+.le-card h3{font-size:1rem;color:var(--blue);text-transform:capitalize}.le-q{border-left:3px solid var(--orange);padding:6px 10px;font-size:.84rem;margin-top:8px;background:#22180f;border-radius:0 8px 8px 0}
+@media(max-width:900px){#map-layout{grid-template-columns:1fr}#map{height:460px}.two,.three,.steps{grid-template-columns:1fr}.bar-row{grid-template-columns:130px 1fr 64px}.wrap{padding:14px 12px 50px}#hdr{padding:8px 12px;gap:8px}#logo{font-size:1.05rem}#logo small{display:none}nav{margin-left:0;width:100%;flex-wrap:wrap;overflow:visible;gap:4px}nav button{padding:6px 9px;font-size:.8rem;white-space:nowrap}h1{font-size:1.35rem}}
+html,body{overflow-x:hidden;max-width:100%}
 </style>
 </head>
 <body>
 <header id="hdr">
-  <div id="logo"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#1E5AA8"/><circle cx="32" cy="18" r="7" fill="#F2C230"/><path d="M32 25v27" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M14 32h36" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M14 32l-6 12h12z" fill="#C8102E"/><path d="M50 32l-6 12h12z" fill="#F28C28"/><path d="M24 54h16" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>JUSTA MT <small>Atlas da Justiça Climática de Mato Grosso</small></div>
+  <div id="logo"><svg viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#131824"/><circle cx="32" cy="18" r="7" fill="#ffd23d"/><path d="M32 25v27" stroke="#19e3ff" stroke-width="4" stroke-linecap="round"/><path d="M14 32h36" stroke="#19e3ff" stroke-width="4" stroke-linecap="round"/><path d="M14 32l-6 12h12z" fill="#ff3d8a"/><path d="M50 32l-6 12h12z" fill="#ff8a3d"/><path d="M24 54h16" stroke="#19e3ff" stroke-width="4" stroke-linecap="round"/></svg>JUSTA MT <small>Atlas da Justiça Climática de Mato Grosso</small></div>
   <nav>
     <button class="on" data-s="mapa">Mapa</button><button data-s="muni">Município</button><button data-s="rank">Ranking</button><button data-s="comp">Comparar</button><button data-s="rel">Relações</button><button data-s="grupos">Grupos</button><button data-s="entenda">Entenda</button><button data-s="letra">Letramento</button>
   </nav>
 </header>
+<div id="welcome" style="position:fixed;inset:0;z-index:2000;background:rgba(5,7,12,.78);display:flex;align-items:center;justify-content:center;padding:16px">
+  <div class="card" style="max-width:640px;width:100%;position:relative;border:1px solid var(--blue);box-shadow:0 0 40px rgba(25,227,255,.25)">
+    <button id="wclose" aria-label="Fechar" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:1.6rem;cursor:pointer;line-height:1">×</button>
+    <div style="font-size:.74rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em">Antes de começar</div>
+    <h2 style="margin:6px 0 10px;font-size:1.3rem">O que é o ICM, a letra que você vai ver em todo lugar</h2>
+    <p style="font-size:.95rem;margin-bottom:10px">O <b>ICM</b> é o Índice de Capacidade Municipal em defesa civil, publicado pelo governo federal em 2026. Ele faz <b>20 perguntas de sim ou não</b> a cada prefeitura: tem plano de contingência? tem mapa das áreas de risco? tem orçamento para defesa civil? tem sistema de alerta? faz campanhas educativas sobre risco?</p>
+    <div class="chips" style="margin:8px 0 12px"><span class="tag tagA" style="font-size:.85rem;padding:6px 10px">A · maior capacidade · 24 municípios</span><span class="tag tagB" style="font-size:.85rem;padding:6px 10px">B · 23</span><span class="tag tagC" style="font-size:.85rem;padding:6px 10px">C · 20</span><span class="tag tagD" style="font-size:.85rem;padding:6px 10px">D · menor capacidade · 74</span></div>
+    <p style="font-size:.92rem;color:var(--muted)">Com as respostas, o tamanho do município e se ele é prioritário, o governo dá uma classe de <b>A</b> a <b>D</b>. Em Mato Grosso, mais da metade é <b>D</b>: quase nada existe no papel para responder a uma seca, uma cheia ou um incêndio. É por isso que essa letra aparece em todos os mapas, rankings e comparações daqui.</p>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn primary" id="wgo">Entendi, quero ver o mapa</button><button class="btn" id="wmore">Ler mais na aba Entenda</button></div>
+  </div>
+</div>
 <div class="wrap">
 
 <!-- MAPA -->
@@ -213,7 +229,7 @@ canvas{max-width:100%}
     <div class="steps">
       <div class="s" style="background:var(--red)"><b>1. Quem emite?</b><span>Emissões de gases de efeito estufa do território (SEEG). Em MT, 84% vêm do desmatamento.</span></div>
       <div class="s" style="background:var(--orange)"><b>2. Quem sofre?</b><span>Desastres registrados: seca, fogo, cheia. 1.902 registros de 1991 a 2024.</span></div>
-      <div class="s" style="background:var(--yellow);color:#111"><b>3. Quem é frágil?</b><span>Idade, renda, água, esgoto, ruralidade. Censo 2022.</span></div>
+      <div class="s" style="background:var(--yellow)"><b>3. Quem é frágil?</b><span>Idade, renda, água, esgoto, ruralidade. Censo 2022.</span></div>
       <div class="s" style="background:var(--blue)"><b>4. Quem responde?</b><span>Capacidade de defesa civil: 20 itens, classes A a D (ICM 2026).</span></div>
     </div>
   </div>
@@ -244,7 +260,8 @@ canvas{max-width:100%}
 const DB=JSON.parse(document.getElementById('DATA').textContent), GEO=JSON.parse(document.getElementById('GEO').textContent);
 const CAT=DB.catalogo, MU=DB.municipios, BYC={}; MU.forEach(m=>BYC[m.cod]=m);
 const CATK={}; CAT.forEach(c=>CATK[c.k]=c);
-const COL_CL={A:'#1E5AA8',B:'#7FB3E6',C:'#F2C230',D:'#C8102E'}, COL_PF={P1:'#F2C230',P2:'#1E5AA8',P3:'#1f9d74',P4:'#c86bb1',P5:'#F28C28'};
+const COL_CL={A:'#19e3ff',B:'#7de7f7',C:'#ffd23d',D:'#ff3d8a'}, COL_PF={P1:'#ffd23d',P2:'#19e3ff',P3:'#8cff5a',P4:'#d98cff',P5:'#ff8a3d'};
+Chart.defaults.color='#c7cfdd';Chart.defaults.borderColor='#2a3346';Chart.defaults.font.family='Inter, system-ui, sans-serif';
 const PERFIL={P1:'P1 jovem, saneamento deficitário',P2:'P2 maior renda e capacidade',P3:'P3 envelhecido, capacidade baixa',P4:'P4 maior presença quilombola',P5:'P5 maior presença indígena, jovem, rural'};
 const fmt=(v,k)=>{ if(v==null||isNaN(v)) return '—'; const d=CATK[k]?CATK[k].dec:1; const c=CATK[k]; if(c&&c.unid==='sim/não') return v>=1?'Sim':'Não'; return v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); };
 const vals=(k,arr)=>(arr||MU).map(m=>m[k]).filter(v=>v!=null&&!isNaN(v));
@@ -266,6 +283,7 @@ function gammainc(a,x){if(x<=0)return 0;if(x<a+1){let sum=1/a,del=sum,ap=a;for(l
 const pchisq=(x,k)=>1-gammainc(k/2,x/2);
 function mannwhitney(a,b){const all=a.concat(b),r=rank(all);const n1=a.length,n2=b.length;let R1=0;for(let i=0;i<n1;i++)R1+=r[i];const U1=R1-n1*(n1+1)/2,U2=n1*n2-U1,U=Math.min(U1,U2);const N=n1+n2;const cnt={};all.forEach(v=>cnt[v]=(cnt[v]||0)+1);let tie=0;Object.values(cnt).forEach(t=>tie+=t**3-t);const sd=Math.sqrt(n1*n2/12*((N+1)-tie/(N*(N-1))));const z=(U-n1*n2/2)/sd;return{U,p:pnorm2(z),rb:1-2*U1/(n1*n2)};}
 function kruskal(groups){const all=[],g=[];groups.forEach((arr,i)=>arr.forEach(v=>{all.push(v);g.push(i)}));const r=rank(all),N=all.length;const R=groups.map(()=>0),n=groups.map(a=>a.length);r.forEach((v,i)=>R[g[i]]+=v);let H=12/(N*(N+1))*R.reduce((s,Ri,i)=>s+Ri*Ri/n[i],0)-3*(N+1);const cnt={};all.forEach(v=>cnt[v]=(cnt[v]||0)+1);let tie=0;Object.values(cnt).forEach(t=>tie+=t**3-t);H/=(1-tie/(N**3-N));const k=groups.length;return{H,p:pchisq(H,k-1),eps:Math.max(0,(H-k+1)/(N-k))};}
+const W=document.getElementById('welcome');const closeW=()=>{W.style.display='none';setTimeout(()=>map.invalidateSize(),50);};document.getElementById('wclose').onclick=closeW;document.getElementById('wgo').onclick=closeW;document.getElementById('wmore').onclick=()=>{closeW();show('entenda');};W.addEventListener('click',e=>{if(e.target===W)closeW();});
 // ---- navigation
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.s));
 function show(s,cod){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('on',x.id==='s-'+s));if(s==='mapa')setTimeout(()=>map.invalidateSize(),50);if(s==='muni'&&cod)ficha(cod);window.scrollTo(0,0);}
@@ -277,21 +295,21 @@ function fillMunis(sel,def){sel.innerHTML=munisSorted.map(m=>`<option value="${m
 const map=L.map('map',{zoomControl:true,attributionControl:true,scrollWheelZoom:true}).setView([-13.0,-55.9],6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:12,opacity:.35,attribution:'© OpenStreetMap'}).addTo(map);
 let mVar='recorrencia',mClasse='',mFiltro='',layer=null;
-const RAMP=['#FEF4E8','#F9C98C','#F28C28','#D9482B','#8B0000'], RAMPG=['#8B0000','#D9482B','#F28C28','#F9C98C','#E8F1FA'];
+const RAMP=['#1d3345','#1f6f8a','#19b6d6','#ff8a3d','#ff3d8a'], RAMPG=['#ff3d8a','#ff8a3d','#19b6d6','#1f6f8a','#1d3345'];
 function mapFilter(m){if(mClasse&&m.classe!==mClasse)return false;if(mFiltro==='deficit'&&!m.deficit)return false;if(mFiltro==='hot3'&&!m.hot3)return false;if(mFiltro==='hot5'&&!m.hot5)return false;return true;}
 function drawMap(){const c=CATK[mVar];const active=MU.filter(mapFilter);const v=vals(mVar,active);let breaks=[],ramp=c.dir==='good'?RAMPG:RAMP;
   const isBin=c.unid==='sim/não';
   if(!isBin&&v.length>=5){breaks=[0.2,0.4,0.6,0.8].map(q=>quantile(v,q));}
   const cls=x=>{if(x==null)return -1;if(isBin)return x>=1?4:0;let i=0;while(i<breaks.length&&x>breaks[i])i++;return i;};
   if(layer)map.removeLayer(layer);
-  layer=L.geoJSON(GEO,{style:f=>{const m=BYC[f.properties.cod];const on=mapFilter(m);const k=cls(m[mVar]);return{fillColor:!on?'#f3f4f6':(k<0?'#e5e7eb':ramp[k]),fillOpacity:on?0.9:0.45,color:'#ffffff',weight:0.8};},
-    onEachFeature:(f,l)=>{const m=BYC[f.properties.cod];l.bindTooltip(`<b>${m.nome}</b><br>${c.label}: ${fmt(m[mVar],mVar)} ${c.unid==='sim/não'?'':c.unid}<br>Classe ICM ${m.classe}${m.deficit?' · déficit':''}`,{className:'jt',sticky:true});l.on('click',()=>show('muni',m.cod));l.on('mouseover',()=>l.setStyle({weight:2.2,color:'#111827'}));l.on('mouseout',()=>layer.resetStyle(l));}}).addTo(map);
+  layer=L.geoJSON(GEO,{style:f=>{const m=BYC[f.properties.cod];const on=mapFilter(m);const k=cls(m[mVar]);return{fillColor:!on?'#1a2130':(k<0?'#2a3346':ramp[k]),fillOpacity:on?0.92:0.5,color:'#0b0e14',weight:0.9};},
+    onEachFeature:(f,l)=>{const m=BYC[f.properties.cod];l.bindTooltip(`<b>${m.nome}</b><br>${c.label}: ${fmt(m[mVar],mVar)} ${c.unid==='sim/não'?'':c.unid}<br>Classe ICM ${m.classe}${m.deficit?' · déficit':''}`,{className:'jt',sticky:true});l.on('click',()=>show('muni',m.cod));l.on('mouseover',()=>l.setStyle({weight:2.4,color:'#ffffff'}));l.on('mouseout',()=>layer.resetStyle(l));}}).addTo(map);
   // legend
   let html=`<h3 style="margin-top:8px">${c.label} <span style="font-weight:400;color:var(--muted)">(${c.unid})</span></h3>`;
   if(isBin){html+=`<div class="row"><span class="sw" style="background:${ramp[4]}"></span>Sim</div><div class="row"><span class="sw" style="background:${ramp[0]}"></span>Não</div>`;}
-  else{const lo=Math.min(...v),hi=Math.max(...v);const b=[lo,...breaks,hi];for(let i=0;i<5;i++)html+=`<div class="row"><span class="sw" style="background:${ramp[i]}"></span>${fmt(b[i],mVar)} a ${fmt(b[i+1],mVar)}</div>`;html+=`<div class="row"><span class="sw" style="background:#f3f4f6"></span>fora do filtro</div>`;}
+  else{const lo=Math.min(...v),hi=Math.max(...v);const b=[lo,...breaks,hi];for(let i=0;i<5;i++)html+=`<div class="row"><span class="sw" style="background:${ramp[i]}"></span>${fmt(b[i],mVar)} a ${fmt(b[i+1],mVar)}</div>`;html+=`<div class="row"><span class="sw" style="background:#1a2130"></span>fora do filtro</div>`;}
   document.getElementById('m-leg').innerHTML=html;document.getElementById('m-desc').textContent=c.desc;
-  document.getElementById('m-n').textContent=isBin?'':(c.dir==='good'?'Escala: vermelho é pior (valor baixo), azul claro é melhor.':c.dir==='bad'?'Escala: vermelho escuro é pior (valor alto).':'Escala: do claro ao escuro, do menor ao maior. Classes por quintis.');
+  document.getElementById('m-n').textContent=isBin?'':(c.dir==='good'?'Escala: rosa é pior (valor baixo), azul é melhor.':c.dir==='bad'?'Escala: rosa neon é pior (valor alto).':'Escala: do azul ao rosa, do menor ao maior. Classes por quintis.');
   // stats
   if(v.length){const s=`<div class="stat-line"><span>Municípios no filtro</span><b>${active.length}</b></div><div class="stat-line"><span>Mediana</span><b>${fmt(median(v),mVar)}</b></div><div class="stat-line"><span>Média</span><b>${fmt(mean(v),mVar)}</b></div><div class="stat-line"><span>Mínimo</span><b>${fmt(Math.min(...v),mVar)}</b></div><div class="stat-line"><span>Máximo</span><b>${fmt(Math.max(...v),mVar)}</b></div>`;
     const top=[...active].filter(m=>m[mVar]!=null).sort((a,b)=>b[mVar]-a[mVar]).slice(0,5);document.getElementById('m-stats').innerHTML=s+`<div class="note" style="margin-top:8px">Cinco maiores: ${top.map(m=>`<a href="#" onclick="show('muni','${m.cod}');return false">${m.nome}</a> (${fmt(m[mVar],mVar)})`).join(', ')}</div>`;}
@@ -307,7 +325,7 @@ muIn.oninput=()=>{const q=muIn.value.toLowerCase().normalize('NFD').replace(/[\u
 document.addEventListener('click',e=>{if(!e.target.closest('.muni-search'))muList.style.display='none';});
 function barRows(m,keys,other){return keys.map(k=>{const c=CATK[k];const all=vals(k);const v=m[k];if(v==null)return `<div class="bar-row"><div class="name">${c.label}<small>${c.unid}</small></div><div class="bar"></div><div class="val">—</div></div>`;
   const p=pctl(v,all),med=pctl(median(all),all);const bad=c.dir==='bad'?p>50:c.dir==='good'?p<50:false;const col=c.dir==='n'?'var(--blue)':bad?'var(--red)':'var(--green)';
-  let ob='';if(other&&other[k]!=null){ob=`<i style="width:${pctl(other[k],all)}%;background:#9ca3af;opacity:.45;top:5px"></i>`;}
+  let ob='';if(other&&other[k]!=null){ob=`<i style="width:${pctl(other[k],all)}%;background:#c7cfdd;opacity:.35;top:5px"></i>`;}
   return `<div class="bar-row"><div class="name">${c.label}<small>${c.unid}</small></div><div class="bar"><i style="width:${Math.max(2,p)}%;background:${col}"></i>${ob}<s style="left:${med}%"></s></div><div class="val">${fmt(v,k)}</div></div>`;}).join('');}
 const GROUPS=['Pessoas','Condições de vida','Escola','Capacidade de resposta','Desastres','Emissões','Ambiente','Síntese'];
 function ficha(cod){const m=BYC[cod];muIn.value=m.nome;const tag=`<span class="tag tag${m.classe}">ICM classe ${m.classe}</span> ${m.deficit?'<span class="tag tagDef">Déficit de justiça adaptativa</span>':''} ${m.hot5?'<span class="tag tagDef">Hotspot central</span>':m.hot3?'<span class="tag tagDef">Hotspot 3 de 4</span>':''} <span class="tag" style="background:var(--soft)">${PERFIL[m.perfil]||m.perfil}</span>`;
@@ -340,7 +358,7 @@ let reChart=null,reSub='',reLab=false;const reX=document.getElementById('re-x'),
 const PRESETS=[['Emissão por habitante × desastres','emis_pc','recorrencia','xy'],['Capacidade de defesa civil × desastres','icm_soma','recorrencia','0'],['Casas sem esgoto × desastres','sem_esgoto','recorrencia','0'],['Escolas × desastres','escolas','recorrencia','xy'],['População rural × emissão por habitante','rural','emis_pc','y'],['Renda × progresso social','renda','ips','0'],['População × capacidade','pop','icm_soma','x'],['Vulnerabilidade IVCM × desastres','ivcm','recorrencia','0']];
 document.getElementById('re-presets').innerHTML=PRESETS.map((p,i)=>`<span class="preset" data-i="${i}">${p[0]}</span>`).join('');
 chips('re-sub',v=>{reSub=v;drawRel();});document.getElementById('re-lab').onclick=()=>{reLab=!reLab;document.getElementById('re-lab').classList.toggle('on',reLab);drawRel();};
-const labelPlugin={id:'lbl',afterDatasetsDraw(ch){if(!reLab)return;const {ctx}=ch;ctx.save();ctx.font='10px Inter, sans-serif';ctx.fillStyle='#374151';ch.data.datasets.forEach((d,i)=>{if(d.type==='line'||d.faded)return;const meta=ch.getDatasetMeta(i);meta.data.forEach((pt,j)=>{const nm=d.data[j].nome;if(nm)ctx.fillText(nm,pt.x+5,pt.y-5);});});ctx.restore();}};
+const labelPlugin={id:'lbl',afterDatasetsDraw(ch){if(!reLab)return;const {ctx}=ch;ctx.save();ctx.font='10px Inter, sans-serif';ctx.fillStyle='#dfe6f2';ch.data.datasets.forEach((d,i)=>{if(d.type==='line'||d.faded)return;const meta=ch.getDatasetMeta(i);meta.data.forEach((pt,j)=>{const nm=d.data[j].nome;if(nm)ctx.fillText(nm,pt.x+5,pt.y-5);});});ctx.restore();}};
 document.querySelectorAll('#re-presets .preset').forEach(el=>el.onclick=()=>{const p=PRESETS[+el.dataset.i];reX.value=p[1];reY.value=p[2];reL.value=p[3];document.querySelectorAll('#re-presets .preset').forEach(x=>x.classList.remove('on'));el.classList.add('on');drawRel();});
 function ols(x,y){const n=x.length,mx=mean(x),my=mean(y);let sxy=0,sxx=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;}const b=sxy/sxx;return{a:my-b*mx,b};}
 const inSub=m=>reSub===''?true:reSub==='deficit'?m.deficit:reSub==='nodef'?!m.deficit:m.classe===reSub;
@@ -356,11 +374,11 @@ function drawRel(){const kx=reX.value,ky=reY.value,cx=CATK[kx],cy=CATK[ky];const
   const cands=CAT.filter(c=>c.k!==ky&&c.unid!=='sim/não').map(c=>{const pts=use.filter(m=>m[c.k]!=null&&m[ky]!=null);if(pts.length<8)return null;const r=spearman(pts.map(m=>m[c.k]),pts.map(m=>m[ky]));return{k:c.k,label:c.label,r,n:pts.length};}).filter(Boolean).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,8);
   document.getElementById('re-top').innerHTML=`<h3>O que mais anda junto com <span style="color:var(--blue)">${cy.label.toLowerCase()}</span> em ${subName.replace(/^os /,'')}</h3>`+cands.map(c=>`<div class="stat-line" style="cursor:pointer" onclick="reX.value='${c.k}';drawRel()"><span>${c.label}</span><b style="color:${c.r>0?'var(--red)':'var(--blue)'}">${c.r>0?'+':''}${c.r.toFixed(2)}</b></div>`).join('')+`<div class="note">Spearman com ${cy.label.toLowerCase()}; vermelho: sobem juntas; azul: uma sobe, outra desce. Clique para colocar no eixo X.</div>`;
   const by=reC.value;const groups={};use.forEach(m=>{const g=by==='none'?'Municípios':by==='deficit'?(m.deficit?'Déficit':'Demais'):by==='perfil'?m.perfil:'Classe '+m.classe;(groups[g]=groups[g]||[]).push({x:m[kx],y:m[ky],nome:m.nome});});
-  const colorOf=g=>by==='classe'?COL_CL[g.slice(-1)]:by==='deficit'?(g==='Déficit'?'#7A0177':'#9ca3af'):by==='perfil'?COL_PF[g]:'#1E5AA8';
+  const colorOf=g=>by==='classe'?COL_CL[g.slice(-1)]:by==='deficit'?(g==='Déficit'?'#d98cff':'#5b6478'):by==='perfil'?COL_PF[g]:'#19e3ff';
   const ds=Object.keys(groups).sort().map(g=>({type:'scatter',label:g,data:groups[g],backgroundColor:colorOf(g),pointRadius:5,pointHoverRadius:8}));
-  if(rest.length)ds.push({type:'scatter',label:'Fora do grupo',data:rest.map(m=>({x:m[kx],y:m[ky],nome:m.nome})),backgroundColor:'#e5e7eb',pointRadius:3,pointHoverRadius:6,faded:true});
+  if(rest.length)ds.push({type:'scatter',label:'Fora do grupo',data:rest.map(m=>({x:m[kx],y:m[ky],nome:m.nome})),backgroundColor:'#3a4356',pointRadius:3,pointHoverRadius:6,faded:true});
   const f=ols(tx,ty);const xs=[Math.min(...tx),Math.max(...tx)];const line=xs.map(v=>({x:lg.includes('x')?10**v:v,y:lg.includes('y')?10**(f.a+f.b*v):f.a+f.b*v}));
-  ds.push({type:'line',label:'Tendência ('+subName+')',data:line,borderColor:'#111827',borderWidth:2,pointRadius:0,fill:false,tension:0});
+  ds.push({type:'line',label:'Tendência ('+subName+')',data:line,borderColor:'#ffffff',borderWidth:2,pointRadius:0,fill:false,tension:0});
   if(reChart)reChart.destroy();reChart=new Chart(document.getElementById('re-chart'),{type:'scatter',data:{datasets:ds},plugins:[labelPlugin],options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:true},onClick:(e,els)=>{if(els.length){const d=reChart.data.datasets[els[0].datasetIndex].data[els[0].index];const m=MU.find(x=>x.nome===d.nome);if(m)show('muni',m.cod);}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.raw.nome?`${c.raw.nome}: ${fmt(c.raw.x,kx)}, ${fmt(c.raw.y,ky)}`:''}}},scales:{x:{type:lg.includes('x')?'logarithmic':'linear',title:{display:true,text:`${cx.label} (${cx.unid})`}},y:{type:lg.includes('y')?'logarithmic':'linear',title:{display:true,text:`${cy.label} (${cy.unid})`}}}}});}
 const fmtp=p=>p<0.001?'< 0,001':'= '+p.toFixed(3).replace('.',',');
 function interp(r){const a=Math.abs(r);const f=a<0.1?'praticamente nenhuma relação':a<0.3?'relação fraca':a<0.5?'relação moderada':'relação forte';return `Leitura: ${f}${a>=0.1?(r>0?', no mesmo sentido (uma sobe, a outra sobe)':', em sentidos opostos (uma sobe, a outra desce)'):''}.`;}
@@ -368,7 +386,7 @@ drawRel();
 // ---- GRUPOS
 let grChart=null;const grV=document.getElementById('gr-var'),grB=document.getElementById('gr-by');fillVars(grV,'recorrencia');grV.onchange=drawGr;grB.onchange=drawGr;
 function drawGr(){const k=grV.value,c=CATK[k],by=grB.value;const groups={};MU.forEach(m=>{if(m[k]==null)return;const g=by==='classe'?m.classe:by==='deficit'?(m.deficit?'Déficit':'Demais'):by==='perfil'?m.perfil:(m.hot3?'Hotspot 3/4':'Demais');(groups[g]=groups[g]||[]).push(m[k]);});
-  const names=Object.keys(groups).sort();const meds=names.map(g=>median(groups[g]));const cols=names.map(g=>by==='classe'?COL_CL[g]:by==='perfil'?COL_PF[g]:(g==='Déficit'||g==='Hotspot 3/4')?'#7A0177':'#9ca3af');
+  const names=Object.keys(groups).sort();const meds=names.map(g=>median(groups[g]));const cols=names.map(g=>by==='classe'?COL_CL[g]:by==='perfil'?COL_PF[g]:(g==='Déficit'||g==='Hotspot 3/4')?'#d98cff':'#5b6478');
   if(grChart)grChart.destroy();grChart=new Chart(document.getElementById('gr-chart'),{type:'bar',data:{labels:names.map((g,i)=>`${by==='classe'?'Classe '+g:g} (n=${groups[g].length})`),datasets:[{label:'Mediana',data:meds,backgroundColor:cols},{label:'Média',data:names.map(g=>mean(groups[g])),backgroundColor:cols.map(x=>x+'66')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{title:{display:true,text:`${c.label} (${c.unid})`}}}}});
   let res='';if(names.length===2){const t=mannwhitney(groups[names[0]],groups[names[1]]);const hi=meds[0]>=meds[1]?0:1,lo=1-hi;const d=meds[hi]-meds[lo];res=`<div>Mediana em <b>${names[0]}</b>: ${fmt(meds[0],k)} · em <b>${names[1]}</b>: ${fmt(meds[1],k)}</div><div><b>${names[hi]}</b> tem mediana maior em <b>${fmt(d,k)}</b>${meds[lo]?` (${(100*d/meds[lo]).toFixed(0)}% acima)`:''}</div><div>Mann–Whitney: p ${fmtp(t.p)}; efeito rank-biserial = ${Math.abs(t.rb).toFixed(2)}</div><div style="margin-top:6px">${t.p<0.05?'Os dois grupos diferem mais do que o acaso explicaria.':'A diferença pode ser obra do acaso.'}</div>`;}
   else{const t=kruskal(names.map(g=>groups[g]));res=`<div>Kruskal–Wallis: H = ${t.H.toFixed(1)}; p ${fmtp(t.p)}; ε² = ${t.eps.toFixed(2)}</div><div style="margin-top:6px">${t.p<0.05?'Pelo menos um grupo difere dos outros mais do que o acaso explicaria.':'As diferenças entre grupos podem ser obra do acaso.'}</div>`;}
