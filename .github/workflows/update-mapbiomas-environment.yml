@@ -29,13 +29,22 @@ jobs:
           codes={r['codigo_ibge'] for r in rows}
           assert len(rows)==5570, len(rows)
           assert len(codes)==5570, len(codes)
-          assert all(r['vegetacao_natural_pct_2022']!='' for r in rows)
-          assert all(r['area_urbanizada_pct_2022']!='' for r in rows)
+
+          intentional_na={'2605459','5106240','5107925'}
+          observed_na={r['codigo_ibge'] for r in rows if not r['vegetacao_natural_pct_2022'] or not r['area_urbanizada_pct_2022']}
+          assert observed_na==intentional_na, (observed_na,intentional_na)
+          assert all(r['status_ambiente_2022']=='ok' for r in rows if r['codigo_ibge'] not in intentional_na)
+          assert all(r['nota_ambiente_2022'] for r in rows if r['codigo_ibge'] in intentional_na)
+
           meta=json.loads(Path('tea-brasil/data/metadata_mapbiomas_ambiente_2022.json').read_text())
           assert meta['municipalities_in_file']==5570
           assert meta['unique_codes']==5570
           assert meta['reference_year']==2022
-          print('VALIDADO: 5.570 municípios MapBiomas 2022')
+          assert meta['valid_environment_municipalities']==5567
+          assert meta['missing_vegetation_cells']==3
+          assert meta['missing_urban_cells']==3
+          assert set(meta['intentional_na_codes'])==intentional_na
+          print('VALIDADO: 5.570 códigos Censo 2022; 5.567 indicadores MapBiomas válidos; 3 NA territoriais/fonte documentados')
           PY
       - name: Publicar base ambiental
         run: |
