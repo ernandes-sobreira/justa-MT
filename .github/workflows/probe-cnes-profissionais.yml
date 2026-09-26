@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'tea-brasil/scripts/probe_cnes_profissionais.py'
+      - 'tea-brasil/scripts/probe_cnes_state.py'
       - '.github/workflows/probe-cnes-profissionais.yml'
 
 jobs:
@@ -13,4 +14,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Testar endpoints oficiais CNES
-        run: python tea-brasil/scripts/probe_cnes_profissionais.py
+        run: python tea-brasil/scripts/probe_cnes_state.py
