@@ -58,4 +58,5 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadExtraScript('sanitation-v1.js','sanitation',()=>{if(typeof initSanitation==='function')initSanitation()});
   loadExtraScript('municipal-context-v1.js','municipal-context');
   loadExtraScript('access-v1.js','access',()=>{if(typeof initAccess==='function')initAccess()});
+  loadExtraScript('environment-v1.js','environment',()=>{if(typeof initEnvironment==='function')initEnvironment()});
 });
