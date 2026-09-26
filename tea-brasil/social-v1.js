@@ -51,7 +51,7 @@ function initSocial(){
 
 function loadSanitationScript(){
   if(document.querySelector('script[data-tea-san]'))return;
-  const sc=document.createElement('script');sc.src='sanitation-v1.js';sc.defer=true;sc.dataset.teaSan='1';document.body.appendChild(sc);
+  const sc=document.createElement('script');sc.src='sanitation-v1.js';sc.dataset.teaSan='1';sc.onload=()=>{if(typeof initSanitation==='function')initSanitation()};document.body.appendChild(sc);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{initSocial();loadSanitationScript()});
