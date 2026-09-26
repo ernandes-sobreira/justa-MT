@@ -1,0 +1,16 @@
+name: Testar estatísticas MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_stats.py'
+      - '.github/workflows/probe-mapbiomas-stats.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descobrir arquivo municipal oficial
+        run: python tea-brasil/scripts/probe_mapbiomas_stats.py
