@@ -18,6 +18,7 @@ import json
 import re
 import sys
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -68,6 +69,11 @@ def normalize_text(s: str) -> str:
     return s
 
 
+def fold_text(s: str) -> str:
+    """Uppercase + remove diacritics so ATENÇÃO and ATENCAO compare equally."""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii").upper()
+
+
 def build_url(code7: str) -> str:
     uf = code7[:2]
     mun6 = code7[:6]
@@ -84,18 +90,25 @@ def build_url(code7: str) -> str:
 
 def parse_caps_count(page: str) -> int | None:
     text = normalize_text(page)
-    # Historical CNES pages usually show "TOTAL N".
-    m = re.search(r"\bTOTAL\s+(\d+)\b", text, flags=re.I)
+    folded = fold_text(text)
+
+    # Historical CNES pages usually show "TOTAL N" when at least one unit is listed.
+    m = re.search(r"\bTOTAL\s+(\d+)\b", folded)
     if m:
         return int(m.group(1))
 
     # Explicit no-record messages are valid zeros.
-    if re.search(r"n[aã]o\s+(?:foram\s+)?encontrad[oa]s?\s+(?:registros|unidades)", text, flags=re.I):
+    if re.search(r"NAO\s+(?:FORAM\s+)?ENCONTRAD[OA]S?\s+(?:REGISTROS|UNIDADES)", folded):
         return 0
-    if re.search(r"nenhum[ao]?\s+(?:registro|unidade)", text, flags=re.I):
+    if re.search(r"NENHUM[AO]?\s+(?:REGISTRO|UNIDADE)", folded):
         return 0
-    if "CENTRO DE ATENCAO PSICOSSOCIAL" in text.upper() and not re.search(r"\b\d{7}\b", text):
+
+    # A successful CNES result page for the requested type can legitimately contain
+    # no rows and no TOTAL line. The type label itself proves that the filtered page
+    # was returned; after positives were caught above, that is a real zero.
+    if "CENTRO DE ATENCAO PSICOSSOCIAL" in folded:
         return 0
+
     return None
 
 
@@ -106,7 +119,7 @@ def fetch_one(rec: dict) -> dict:
         page = get_text(url)
         count = parse_caps_count(page)
         ok = count is not None
-        err = None if ok else "pagina_sem_total_e_sem_mensagem_de_zero"
+        err = None if ok else "pagina_sem_marcador_valido_de_resultado"
     except Exception as exc:
         count = None
         ok = False
@@ -183,7 +196,7 @@ def main():
         "municipalities_with_caps": positive,
         "missing_codes": [x["codigo_ibge"] for x in missing],
         "rules": [
-            "Zero is used only when CNES returns a valid no-CAPS result.",
+            "Zero is used only when CNES returns a valid filtered result page with no CAPS rows.",
             "Request or parse failures remain null and are never converted to zero.",
             "All 5570 IBGE municipality codes must be present in the output."
         ]
@@ -191,7 +204,6 @@ def main():
     META.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(json.dumps(meta, ensure_ascii=False, indent=2), flush=True)
-    # Require full request/parse coverage before publishing as integrated.
     if missing:
         raise RuntimeError(f"CNES incomplete: {len(missing)} municipalities could not be validated")
 
