@@ -1,0 +1,46 @@
+{
+  "generated_at_utc": "2026-09-26T16:18:05.193351+00:00",
+  "expected_municipalities": 5570,
+  "municipalities_in_file": 5570,
+  "unique_codes": 5570,
+  "missing_income_cells": 0,
+  "missing_tea_cells": 14,
+  "missing_income_codes": [],
+  "missing_tea_codes": [
+    "1708254",
+    "1711100",
+    "1715507",
+    "2204154",
+    "3504701",
+    "4120309",
+    "4208955",
+    "4215901",
+    "4306130",
+    "4312005",
+    "4312351",
+    "4314787",
+    "4321634",
+    "4322186"
+  ],
+  "sources": {
+    "tea": {
+      "institution": "IBGE",
+      "survey": "Censo Demografico 2022",
+      "sidra_table": 10145,
+      "url": "https://sidra.ibge.gov.br/tabela/10145",
+      "api_query": "https://apisidra.ibge.gov.br/values/t/10145/n6/all/v/93,13267,13408/p/2022/c2/6794/c58/95253/h/n/f/a/d/m"
+    },
+    "income": {
+      "institution": "IBGE",
+      "survey": "Censo Demografico 2022",
+      "sidra_table": 10295,
+      "variable": 13431,
+      "url": "https://sidra.ibge.gov.br/tabela/10295",
+      "api_query": "https://apisidra.ibge.gov.br/values/t/10295/n6/all/v/13431/p/2022/c2/6794/c86/95251/c58/95253/h/n/f/a/d/m"
+    }
+  },
+  "rules": [
+    "Exactly 5570 unique municipal IBGE codes are required for each integrated source.",
+    "Suppressed or unavailable statistical cells remain null/blank; they are never replaced by zero."
+  ]
+}
