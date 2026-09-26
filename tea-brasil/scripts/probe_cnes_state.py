@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import re, urllib.request, urllib.parse
+import json,re,urllib.request,urllib.parse
 UA={"User-Agent":"TEA-Brasil/1.0"}
 def get(url,timeout=50):
     req=urllib.request.Request(url,headers=UA)
@@ -8,16 +8,26 @@ def get(url,timeout=50):
             d=r.read();print('OK',r.status,r.headers.get('content-type'),len(d),r.geturl());return d
     except Exception as e: print('ERR',url,repr(e));return b''
 
-js=get('https://cnes.datasus.gov.br/angular/extracaoProfissional.js')
-t=js.decode('utf-8',errors='replace')
-for term in ['carregarEstados','carregarMunicipios','Estado','Municipio','urlServlet']:
-    print('\n###',term)
-    for m in list(re.finditer(term,t,re.I))[:10]: print(t[max(0,m.start()-500):m.start()+900])
-html=get('https://cnes.datasus.gov.br/pages/profissionais/extracao.jsp').decode('latin-1',errors='replace')
-print('\n### SELECTS')
-for x in re.findall(r'<select.*?</select>',html,re.I|re.S): print(x[:2500])
+states_raw=get('https://cnes.datasus.gov.br/services/estados')
+print('\n### STATES RAW')
+print(states_raw[:5000].decode('utf-8',errors='replace'))
+try:
+    states=json.loads(states_raw.decode('utf-8'))
+except Exception:
+    states={}
+print('\n### STATES PARSED',states)
+
 base='https://cnes.datasus.gov.br/ExtracaoProfissionalServlet?'
-variants=['11','RO','Rondonia','RONDÔNIA','1']
-for v in variants:
-    qs=urllib.parse.urlencode({'path':f'estado={v}','gestao':'','comp':'202212'})
-    print('\nTEST',v);get(base+qs,80)
+# Test the actual key associated with Rondônia plus a few common guesses.
+vals=[]
+if isinstance(states,dict):
+    for k,v in states.items():
+        if 'ROND' in str(v).upper():vals.append(str(k))
+vals += ['11','RO','1']
+seen=set()
+for v in vals:
+    if v in seen:continue
+    seen.add(v)
+    for gestao in ['todos','']:
+        qs=urllib.parse.urlencode({'path':f'estado={v}','gestao':gestao,'comp':'202212'})
+        print('\nTEST',v,'GESTAO',gestao);get(base+qs,120)
