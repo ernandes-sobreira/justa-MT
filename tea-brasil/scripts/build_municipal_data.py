@@ -6,7 +6,7 @@ Integrated sources (2022):
 - SIDRA 10295: mean nominal monthly household income per capita.
 - SIDRA 6803: households connected to the general water network and using it as main source.
 - SIDRA 6805: households with general/pluvial sewer network or septic/filter tank linked to network.
-- SIDRA 6892: households with garbage collected at home or deposited in cleaning-service container.
+- SIDRA 6892: garbage collected at home or deposited in a cleaning-service container.
 
 Hard rule: every integrated source must return exactly 5,570 unique municipal IBGE codes.
 Suppressed/unavailable statistical cells remain null/blank and are never converted to zero.
@@ -27,7 +27,7 @@ TEA_URL = f"{BASE}/t/10145/n6/all/v/93,13267,13408/p/2022/c2/6794/c58/95253/h/n/
 INCOME_URL = f"{BASE}/t/10295/n6/all/v/13431/p/2022/c2/6794/c86/95251/c58/95253/h/n/f/a/d/m"
 WATER_URL = f"{BASE}/t/6803/n6/all/v/1000381/p/2022/c1821/72144/h/n/f/a/d/m"
 SEWAGE_URL = f"{BASE}/t/6805/n6/all/v/1000381/p/2022/c11558/46290/h/n/f/a/d/m"
-GARBAGE_URL = f"{BASE}/t/6892/n6/all/v/1000381/p/2022/c67/73827/h/n/f/a/d/m"
+GARBAGE_URL = f"{BASE}/t/6892/n6/all/v/1000381/p/2022/c67/72120,72121/h/n/f/a/d/m"
 
 OUTDIR = Path(__file__).resolve().parents[1] / "data"
 CSV_PATH = OUTDIR / "municipios_tea_renda_2022.csv"
@@ -102,6 +102,26 @@ def fetch_single_indicator(label: str, url: str):
     return out
 
 
+def fetch_sum_indicator(label: str, url: str, expected_parts: int):
+    print(f"Downloading {label}…", flush=True)
+    payload = rows_without_header(fetch_json(url))
+    parts = {}
+    for r in payload:
+        code = municipality_code(r)
+        if not code:
+            continue
+        parts.setdefault(code, []).append(clean_num(r.get("V")))
+    require_5570(label, parts.keys())
+    out = {}
+    for code, vals in parts.items():
+        if len(vals) != expected_parts or any(v is None for v in vals):
+            out[code] = None
+        else:
+            out[code] = sum(vals)
+    print(f"{label}: {len(out)} municipal codes", flush=True)
+    return out
+
+
 def build():
     OUTDIR.mkdir(parents=True, exist_ok=True)
 
@@ -131,7 +151,7 @@ def build():
     income = fetch_single_indicator("Income/SIDRA 10295", INCOME_URL)
     water = fetch_single_indicator("Water/SIDRA 6803", WATER_URL)
     sewage = fetch_single_indicator("Sewage/SIDRA 6805", SEWAGE_URL)
-    garbage = fetch_single_indicator("Garbage/SIDRA 6892", GARBAGE_URL)
+    garbage = fetch_sum_indicator("Garbage/SIDRA 6892", GARBAGE_URL, 2)
 
     for label, dataset in [("income",income),("water",water),("sewage",sewage),("garbage",garbage)]:
         if set(dataset) != tea_codes:
@@ -174,7 +194,7 @@ def build():
             "income":{"institution":"IBGE","survey":"Censo Demografico 2022","sidra_table":10295,"variable":13431,"url":"https://sidra.ibge.gov.br/tabela/10295","api_query":INCOME_URL},
             "water":{"institution":"IBGE","survey":"Censo Demografico 2022","sidra_table":6803,"variable":1000381,"classification":1821,"category":72144,"label":"Possui ligacao a rede geral e a utiliza como forma principal","url":"https://sidra.ibge.gov.br/tabela/6803","api_query":WATER_URL},
             "sewage":{"institution":"IBGE","survey":"Censo Demografico 2022","sidra_table":6805,"variable":1000381,"classification":11558,"category":46290,"label":"Rede geral, rede pluvial ou fossa ligada a rede","url":"https://sidra.ibge.gov.br/tabela/6805","api_query":SEWAGE_URL},
-            "garbage":{"institution":"IBGE","survey":"Censo Demografico 2022","sidra_table":6892,"variable":1000381,"classification":67,"category":73827,"label":"Coletado no domicilio por servico de limpeza ou depositado em cacamba de servico de limpeza","url":"https://sidra.ibge.gov.br/tabela/6892","api_query":GARBAGE_URL}
+            "garbage":{"institution":"IBGE","survey":"Censo Demografico 2022","sidra_table":6892,"variable":1000381,"classification":67,"categories":[72120,72121],"label":"Coletado no domicilio por servico de limpeza + depositado em cacamba de servico de limpeza","url":"https://sidra.ibge.gov.br/tabela/6892","api_query":GARBAGE_URL}
         },
         "rules":[
             "Every integrated source must contain exactly 5570 unique municipal IBGE codes.",
