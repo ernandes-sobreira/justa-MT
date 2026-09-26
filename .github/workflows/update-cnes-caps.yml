@@ -1,0 +1,49 @@
+name: Atualizar CAPS CNES TEA-Brasil
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/build_cnes_access.py'
+      - '.github/workflows/update-cnes-caps.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-caps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gerar CAPS por município
+        run: python tea-brasil/scripts/build_cnes_access.py
+
+      - name: Validar 5.570 municípios
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          p=Path('tea-brasil/data/cnes_caps_2022.csv')
+          rows=list(csv.DictReader(p.open(encoding='utf-8-sig')))
+          codes={r['codigo_ibge'] for r in rows}
+          assert len(rows)==5570, len(rows)
+          assert len(codes)==5570, len(codes)
+          meta=json.loads(Path('tea-brasil/data/metadata_cnes_caps_2022.json').read_text(encoding='utf-8'))
+          assert meta['missing_caps_cells']==0, meta['missing_caps_cells']
+          print('VALIDADO: 5.570 municípios, 5.570 códigos e 0 falhas de CNES')
+          PY
+
+      - name: Publicar base CAPS
+        run: |
+          git config user.name 'tea-brasil-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tea-brasil/data/cnes_caps_2022.csv tea-brasil/data/cnes_caps_2022.json tea-brasil/data/metadata_cnes_caps_2022.json
+          if git diff --cached --quiet; then
+            echo 'Sem alterações.'
+          else
+            git commit -m 'Atualiza CAPS CNES 2022 dos 5570 municípios'
+            git push
+          fi
