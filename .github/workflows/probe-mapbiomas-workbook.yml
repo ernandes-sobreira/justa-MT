@@ -1,0 +1,18 @@
+name: Inspecionar planilha MapBiomas municipal
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_workbook.py'
+      - '.github/workflows/probe-mapbiomas-workbook.yml'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar leitor XLSX
+        run: python -m pip install --quiet openpyxl
+      - name: Inspecionar arquivo oficial
+        run: python tea-brasil/scripts/probe_mapbiomas_workbook.py
