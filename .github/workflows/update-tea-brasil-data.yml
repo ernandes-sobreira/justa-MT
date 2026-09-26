@@ -36,8 +36,8 @@ jobs:
           assert meta['municipalities_in_file']==5570
           assert meta['unique_codes']==5570
           print('VALIDADO: 5.570 municípios e 5.570 códigos IBGE únicos')
-          print('Células ausentes de renda:', meta['missing_income_cells'])
-          print('Células ausentes de TEA:', meta['missing_tea_cells'])
+          for k,v in meta['missing_cells'].items():
+              print(f'Células ausentes em {k}: {v}')
           PY
 
       - name: Publicar arquivos consolidados no repositório
