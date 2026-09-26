@@ -1,7 +1,6 @@
-/* TEA-Brasil — módulo socioeconômico + carregador do saneamento.
+/* TEA-Brasil — módulo socioeconômico + carregadores complementares.
    Fonte renda: Censo Demográfico 2022 / SIDRA 10295.
-   A plataforma usa a base municipal consolidada e validada em /data.
-   Regra: 5.570 códigos municipais obrigatórios; ausentes nunca viram zero. */
+   Base consolidada em /data, com 5.570 códigos municipais. */
 
 const SOCIAL={loaded:false,rows:[],chart:null};
 const $s=id=>document.getElementById(id);
@@ -49,9 +48,13 @@ function initSocial(){
   context.querySelector('.section-title').insertAdjacentElement('afterend',box);$s('income-load').addEventListener('click',loadSocial);setTimeout(loadSocial,400);
 }
 
-function loadSanitationScript(){
-  if(document.querySelector('script[data-tea-san]'))return;
-  const sc=document.createElement('script');sc.src='sanitation-v1.js';sc.dataset.teaSan='1';sc.onload=()=>{if(typeof initSanitation==='function')initSanitation()};document.body.appendChild(sc);
+function loadExtraScript(src,key,onload){
+  if(document.querySelector(`script[data-tea-extra="${key}"]`))return;
+  const sc=document.createElement('script');sc.src=src;sc.dataset.teaExtra=key;if(onload)sc.onload=onload;document.body.appendChild(sc);
 }
 
-document.addEventListener('DOMContentLoaded',()=>{initSocial();loadSanitationScript()});
+document.addEventListener('DOMContentLoaded',()=>{
+  initSocial();
+  loadExtraScript('sanitation-v1.js','sanitation',()=>{if(typeof initSanitation==='function')initSanitation()});
+  loadExtraScript('municipal-context-v1.js','municipal-context');
+});
