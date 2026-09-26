@@ -66,7 +66,6 @@ async function loadIncomeData(){
       throw new Error(`A renda não cobre os 5.570 municípios: ${SOCIAL.incomeValid} valores válidos.`);
     }
 
-    // Integra os valores ao mapa principal quando a base de TEA já estiver carregada.
     if(typeof S!=='undefined'&&S.municipalities){
       for(const d of SOCIAL.rows){
         const target=S.municipalities.get(d.code);
@@ -145,7 +144,7 @@ function initIncomeModule(){
     <div class="social-head"><div class="social-title"><div class="social-num">01</div><div><span class="mini">DADO SOCIOECONÔMICO INTEGRADO</span><h2>Renda domiciliar per capita</h2><p>Valor médio mensal por morador do domicílio • Censo 2022 • SIDRA 10295</p></div></div><span class="badge integrated">5.570 MUNICÍPIOS • IBGE</span></div>
     <div class="social-actions">
       <button id="income-load" class="btn primary">Validar/carregar 5.570 municípios</button>
-      <a class="btn" href="data/municipios_tea_renda_2022.csv" download>Baixar CSV completo: TEA + renda</a>
+      <a class="btn" href="data/municipios_tea_renda_2022.csv" download>Baixar CSV completo: TEA + renda + saneamento</a>
       <a class="btn" href="data/metadata.json" target="_blank" rel="noopener">Ver metadados e cobertura</a>
       <a class="btn" href="https://sidra.ibge.gov.br/tabela/10295" target="_blank" rel="noopener">Fonte oficial da renda</a>
     </div>
@@ -157,10 +156,22 @@ function initIncomeModule(){
   title.insertAdjacentElement('afterend',box);
 
   const oldCard=[...context.querySelectorAll('.context-card')].find(x=>/Renda e saneamento/i.test(x.textContent));
-  if(oldCard){const badge=oldCard.querySelector('.badge');if(badge){badge.textContent='Renda: 5.570/5.570';badge.className='badge integrated';}const b=oldCard.querySelector('b');if(b)b.textContent='Renda: IBGE/SIDRA 10295 • saneamento: próxima etapa';}
+  if(oldCard){const badge=oldCard.querySelector('.badge');if(badge){badge.textContent='Renda: 5.570/5.570';badge.className='badge integrated';}const b=oldCard.querySelector('b');if(b)b.textContent='Renda: IBGE/SIDRA 10295 • saneamento integrado';}
 
   document.getElementById('income-load').addEventListener('click',loadIncomeData);
   setTimeout(loadIncomeData,500);
 }
 
-document.addEventListener('DOMContentLoaded',initIncomeModule);
+function loadSanitationModule(){
+  if(document.querySelector('script[data-tea-module="sanitation"]'))return;
+  const s=document.createElement('script');
+  s.src='sanitation-v1.js?v=1';
+  s.dataset.teaModule='sanitation';
+  document.body.appendChild(s);
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',()=>{initIncomeModule();loadSanitationModule();});
+}else{
+  initIncomeModule();loadSanitationModule();
+}
