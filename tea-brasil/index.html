@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles-v2.css" />
 </head>
 <body>
 <header id="topbar">
@@ -34,51 +34,50 @@
     <div class="hero">
       <div>
         <h1>Onde estão as diferenças<br><em>no diagnóstico de autismo?</em></h1>
-        <p class="lead">Uma plataforma pública para enxergar o TEA no território brasileiro sem confundir associação, diagnóstico observado e causalidade.</p>
+        <p class="lead">Uma plataforma pública para enxergar o TEA no território brasileiro, comparar grupos e municípios e investigar contexto social e ambiental sem confundir associação com causalidade.</p>
       </div>
       <div class="hero-badge"><span>5.570</span><small>municípios<br>analisáveis</small></div>
     </div>
 
     <div class="kpis national-kpis">
       <article class="kpi accent"><div class="kpi-value">2,4 mi</div><div class="kpi-label">pessoas diagnosticadas com TEA</div><div class="kpi-note">Brasil • Censo 2022</div></article>
-      <article class="kpi"><div class="kpi-value">1,2%</div><div class="kpi-label">da população brasileira</div><div class="kpi-note">diagnóstico informado no Censo</div></article>
-      <article class="kpi"><div class="kpi-value">2,6%</div><div class="kpi-label">entre 5 e 9 anos</div><div class="kpi-note">faixa etária com maior percentual nacional divulgado</div></article>
+      <article class="kpi"><div id="nat-pct" class="kpi-value">1,2%</div><div class="kpi-label">da população brasileira</div><div class="kpi-note">diagnóstico informado no Censo</div></article>
+      <article class="kpi"><div class="kpi-value">2,6%</div><div class="kpi-label">entre 5 e 9 anos</div><div class="kpi-note">referência nacional divulgada</div></article>
       <article class="kpi pink"><div class="kpi-value">3,8% × 1,3%</div><div class="kpi-label">meninos × meninas, 5–9 anos</div><div class="kpi-note">diferença nacional observada</div></article>
     </div>
 
     <div class="grid two mt24">
       <article class="card">
-        <div class="card-head"><div><span class="mini">LEITURA RÁPIDA</span><h2>O que a plataforma permite ver</h2></div></div>
-        <div class="signal-list">
-          <div><b>Sexo</b><span>Homens, mulheres e total</span></div>
-          <div><b>Idade</b><span>Faixas etárias do Censo 2022</span></div>
-          <div><b>Cor ou raça</b><span>Diferenças observadas por município</span></div>
-          <div><b>Território</b><span>Estados e 5.570 municípios</span></div>
-          <div><b>Contexto</b><span>Ambiente, renda, saneamento e acesso à saúde</span></div>
+        <div class="card-head"><span class="mini">COMO LER</span><h2>Percentual não é contagem</h2></div>
+        <div class="definition-grid">
+          <div class="definition"><strong>Total</strong><span>Pessoas com diagnóstico de TEA divididas por toda a população do território.</span></div>
+          <div class="definition"><strong>Homens / Mulheres</strong><span>Cada percentual usa apenas a população daquele sexo como denominador.</span></div>
+          <div class="definition"><strong>Idade</strong><span>Cada barra representa a proporção dentro da própria faixa etária.</span></div>
         </div>
+        <div class="how-read"><b>Por que o total pode ser menor que o masculino?</b><br>Porque o total não é soma nem média simples. Ele é uma proporção calculada com toda a população. Se o percentual masculino é maior e o feminino menor, o total tende a ficar entre eles, ponderado pelo número de homens e mulheres no município.</div>
       </article>
       <article class="card source-card">
-        <div class="card-head"><div><span class="mini">TRANSPARÊNCIA</span><h2>Dados públicos, sem números inventados</h2></div></div>
-        <p>A camada de TEA consulta diretamente a API pública do SIDRA/IBGE. Indicadores ambientais e sociais só aparecem quando a fonte municipal estiver validada.</p>
-        <div class="source-tags"><span>IBGE</span><span>SIDRA</span><span>INPE</span><span>MapBiomas</span><span>DATASUS/CNES</span><span>INMET</span></div>
-        <p class="note warn">⚠ Diagnóstico observado em uma população não equivale a risco causal de desenvolver TEA.</p>
+        <div class="card-head"><span class="mini">TRANSPARÊNCIA</span><h2>Dados públicos e rastreáveis</h2></div>
+        <p>Os indicadores de TEA são consultados diretamente nas tabelas públicas do SIDRA/IBGE. Ausências e supressões não são transformadas em zero.</p>
+        <div class="source-tags"><span>IBGE</span><span>SIDRA</span><span>Censo 2022</span><span>INPE</span><span>MapBiomas</span><span>DATASUS/CNES</span></div>
+        <p class="note warn">⚠ Diferença observada entre grupos ou municípios não demonstra causa do TEA.</p>
       </article>
     </div>
 
     <article class="card mt24">
-      <div class="card-head split"><div><span class="mini">BRASIL EM DADOS</span><h2>Municípios com dados carregados</h2></div><button id="btn-load-panorama" class="btn primary">Carregar dados públicos</button></div>
+      <div class="card-head split"><div><span class="mini">BRASIL EM DADOS</span><h2>Municípios com dados carregados</h2></div><div class="btn-row"><button id="btn-load-panorama" class="btn primary">Carregar dados públicos</button><button id="btn-download-full" class="btn">Baixar base municipal</button></div></div>
       <div id="load-status-panorama" class="status">Clique para consultar a tabela 10145 do SIDRA.</div>
       <div class="kpis compact mt16">
         <article class="kpi"><div id="pan-loaded" class="kpi-value">—</div><div class="kpi-label">municípios carregados</div></article>
         <article class="kpi"><div id="pan-median" class="kpi-value">—</div><div class="kpi-label">mediana municipal</div></article>
         <article class="kpi"><div id="pan-p90" class="kpi-value">—</div><div class="kpi-label">percentil 90</div></article>
-        <article class="kpi"><div id="pan-weighted" class="kpi-value">—</div><div class="kpi-label">Brasil (referência)</div></article>
+        <article class="kpi"><div id="pan-weighted" class="kpi-value">—</div><div class="kpi-label">Brasil calculado da base</div></article>
       </div>
     </article>
   </section>
 
   <section id="screen-mapa" class="screen">
-    <div class="section-title"><div><span class="eyebrow">TERRITÓRIO</span><h1>Mapa do diagnóstico observado</h1><p class="lead">Comece pelos estados. Clique em um estado para abrir os municípios e comparar o percentual de pessoas com diagnóstico informado de TEA.</p></div></div>
+    <div class="section-title"><span class="eyebrow">TERRITÓRIO</span><h1>Mapa do diagnóstico observado</h1><p class="lead">Comece pelos estados. Clique em um estado para abrir os municípios e comparar o percentual de pessoas com diagnóstico informado de TEA.</p></div>
     <div class="map-layout mt20">
       <aside class="card controls">
         <label>Camada</label>
@@ -91,25 +90,25 @@
         <button id="btn-map-brasil" class="btn full">Voltar ao Brasil</button>
         <div id="map-status" class="status small">Aguardando dados.</div>
         <div id="map-legend" class="legend"></div>
-        <p class="note">Municípios pequenos podem apresentar maior instabilidade amostral. Use filtros de população no ranking.</p>
+        <p class="note">O mapa usa somente os polígonos temáticos, sem camada comercial de fundo e sem necessidade de chave de API.</p>
       </aside>
       <div class="card map-card"><div id="map"></div></div>
     </div>
 
     <article class="card mt20">
-      <div class="card-head split"><div><span class="mini">RANKING EXPLORATÓRIO</span><h2>Percentuais municipais observados</h2></div><button id="btn-download" class="btn">Baixar CSV</button></div>
+      <div class="card-head split"><div><span class="mini">RANKING EXPLORATÓRIO</span><h2>Percentuais municipais observados</h2></div><button id="btn-download" class="btn">Baixar CSV filtrado</button></div>
       <div class="filters-row">
         <select id="rank-uf"><option value="">Todos os estados</option></select>
         <select id="rank-min-pop"><option value="0">Todas as populações</option><option value="5000">População ≥ 5 mil</option><option value="20000" selected>População ≥ 20 mil</option><option value="100000">População ≥ 100 mil</option></select>
         <input id="rank-search" type="search" placeholder="Buscar município..." />
       </div>
       <div class="table-wrap"><table><thead><tr><th>#</th><th>Município</th><th>UF</th><th class="num">População</th><th class="num">Pessoas com TEA</th><th class="num">% TEA</th></tr></thead><tbody id="rank-body"><tr><td colspan="6" class="empty">Carregue os dados para ver o ranking.</td></tr></tbody></table></div>
-      <p class="note">Ranking é descritivo. Não classifica municípios como “melhores”, “piores” ou de maior risco causal.</p>
+      <p class="note">O ranking é descritivo. Não classifica municípios como “melhores”, “piores” ou como territórios de maior risco causal.</p>
     </article>
   </section>
 
   <section id="screen-municipio" class="screen">
-    <div class="section-title"><div><span class="eyebrow">PERFIL MUNICIPAL</span><h1>Um município, várias distinções</h1><p class="lead">Veja o total e desagregue por sexo, idade e cor/raça usando as tabelas públicas do Censo 2022.</p></div></div>
+    <div class="section-title"><span class="eyebrow">PERFIL MUNICIPAL</span><h1>Um município, várias distinções</h1><p class="lead">Veja o total e desagregue por sexo, idade e cor/raça. As novas caixas abaixo calculam diferenças absolutas, relativas e posições descritivas.</p></div>
     <article class="card mt20">
       <div class="search-grid">
         <div><label>Estado</label><select id="profile-uf"><option value="">Selecione...</option></select></div>
@@ -118,23 +117,45 @@
       </div>
       <div id="profile-status" class="status small">Aguardando seleção.</div>
     </article>
+
     <div id="profile-content" class="hidden">
       <div class="kpis compact mt20">
         <article class="kpi accent"><div id="prof-pct" class="kpi-value">—</div><div class="kpi-label">com diagnóstico de TEA</div></article>
         <article class="kpi"><div id="prof-count" class="kpi-value">—</div><div class="kpi-label">pessoas diagnosticadas</div></article>
         <article class="kpi"><div id="prof-pop" class="kpi-value">—</div><div class="kpi-label">população total</div></article>
-        <article class="kpi"><div id="prof-br" class="kpi-value">1,2%</div><div class="kpi-label">referência Brasil</div></article>
+        <article class="kpi"><div id="prof-br" class="kpi-value">—</div><div class="kpi-label">referência Brasil</div></article>
       </div>
+
+      <article class="card mt20">
+        <div class="card-head"><span class="mini">ANÁLISES AUTOMÁTICAS</span><h2>O que mais chama atenção neste município?</h2></div>
+        <div id="analysis-cards" class="grid four"></div>
+        <div id="auto-read" class="how-read auto-read mt16"></div>
+      </article>
+
       <div class="grid two mt20">
-        <article class="card"><div class="card-head"><div><span class="mini">SEXO</span><h2>Percentual com diagnóstico</h2></div></div><div class="chart-box"><canvas id="chart-sex"></canvas></div></article>
-        <article class="card"><div class="card-head"><div><span class="mini">IDADE</span><h2>Percentual por faixa etária</h2></div></div><div class="chart-box"><canvas id="chart-age"></canvas></div></article>
+        <article class="card">
+          <div class="card-head"><span class="mini">SEXO</span><h2>Percentual com diagnóstico</h2></div>
+          <div class="chart-box"><canvas id="chart-sex"></canvas></div>
+          <div id="sex-explain" class="how-read"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><span class="mini">IDADE</span><h2>Percentual por faixa etária</h2></div>
+          <div class="chart-box"><canvas id="chart-age"></canvas></div>
+          <div id="age-explain" class="how-read"></div>
+        </article>
       </div>
-      <article class="card mt20"><div class="card-head"><div><span class="mini">COR OU RAÇA</span><h2>Distinções observadas no município</h2></div></div><div class="chart-box tall"><canvas id="chart-race"></canvas></div><p class="note">Categorias e disponibilidade seguem a tabela 10147 do Censo 2022. Células suprimidas/indisponíveis permanecem ausentes — nunca são transformadas em zero.</p></article>
+
+      <article class="card mt20">
+        <div class="card-head"><span class="mini">COR OU RAÇA</span><h2>Distinções observadas no município</h2></div>
+        <div class="chart-box tall"><canvas id="chart-race"></canvas></div>
+        <div id="race-explain" class="how-read"></div>
+        <p class="note">Cada percentual é calculado dentro da própria categoria. Células suprimidas ou indisponíveis permanecem ausentes.</p>
+      </article>
     </div>
   </section>
 
   <section id="screen-comparar" class="screen">
-    <div class="section-title"><div><span class="eyebrow">COMPARAÇÃO</span><h1>Município × município</h1><p class="lead">Compare prevalência observada e perfis demográficos sem criar uma pontuação artificial.</p></div></div>
+    <div class="section-title"><span class="eyebrow">COMPARAÇÃO</span><h1>Município × município</h1><p class="lead">Compare o percentual total e alguns grupos demográficos sem criar uma pontuação artificial.</p></div>
     <article class="card mt20">
       <div class="compare-selects">
         <div><label>Município A</label><select id="cmp-a"><option value="">Carregue os dados</option></select></div>
@@ -145,57 +166,88 @@
     </article>
     <div id="compare-content" class="hidden">
       <div class="grid two mt20"><article class="card"><div id="cmp-card-a"></div></article><article class="card"><div id="cmp-card-b"></div></article></div>
-      <article class="card mt20"><div class="card-head"><div><span class="mini">LADO A LADO</span><h2>Percentual observado</h2></div></div><div class="chart-box"><canvas id="chart-compare"></canvas></div></article>
+      <article class="card mt20"><div class="card-head"><span class="mini">LADO A LADO</span><h2>Percentual observado</h2></div><div class="chart-box"><canvas id="chart-compare"></canvas></div><div id="compare-read" class="how-read"></div></article>
     </div>
   </section>
 
   <section id="screen-contexto" class="screen">
-    <div class="section-title"><div><span class="eyebrow">PRÓXIMA CAMADA</span><h1>Ambiente, condição social e acesso ao diagnóstico</h1><p class="lead">Estas dimensões serão integradas por código IBGE municipal. A plataforma não exibe valores até que cada fonte seja validada e documentada.</p></div></div>
+    <div class="section-title"><span class="eyebrow">PRÓXIMAS ANÁLISES</span><h1>Ambiente, condição social e acesso ao diagnóstico</h1><p class="lead">Estas dimensões serão integradas por código IBGE municipal e analisadas separadamente e em conjunto.</p></div>
     <div class="context-grid mt20">
-      <article class="context-card"><span class="icon">●</span><div><h3>PM2,5 e qualidade do ar</h3><p>Exposição atmosférica municipal / média plurianual.</p><b>Fonte prevista: VigiAr / bases públicas validadas</b></div><span class="badge pending">A integrar</span></article>
-      <article class="context-card"><span class="icon">☀</span><div><h3>Calor e extremos térmicos</h3><p>Temperatura, dias extremos e ondas de calor.</p><b>Fonte prevista: INMET / INPE</b></div><span class="badge pending">A integrar</span></article>
+      <article class="context-card"><span class="icon">●</span><div><h3>PM2,5 e qualidade do ar</h3><p>Média anual e exposição plurianual.</p><b>Fonte prevista: VigiAr / bases públicas validadas</b></div><span class="badge pending">A integrar</span></article>
+      <article class="context-card"><span class="icon">☀</span><div><h3>Calor e extremos térmicos</h3><p>Temperatura média, máximas e ondas de calor.</p><b>Fonte prevista: INMET / INPE</b></div><span class="badge pending">A integrar</span></article>
       <article class="context-card"><span class="icon">▲</span><div><h3>Queimadas</h3><p>Focos, densidade e área queimada.</p><b>Fonte: INPE / BDQueimadas</b></div><span class="badge pending">A integrar</span></article>
       <article class="context-card"><span class="icon">✦</span><div><h3>Vegetação e urbanização</h3><p>Cobertura vegetal, área urbana e uso da terra.</p><b>Fonte: MapBiomas</b></div><span class="badge pending">A integrar</span></article>
       <article class="context-card"><span class="icon">⌂</span><div><h3>Renda e saneamento</h3><p>Renda, água, esgoto, lixo e condições domiciliares.</p><b>Fonte: IBGE / Censo 2022</b></div><span class="badge pending">A integrar</span></article>
-      <article class="context-card"><span class="icon">＋</span><div><h3>Acesso ao diagnóstico</h3><p>Serviços, profissionais e estrutura assistencial.</p><b>Fonte: CNES / DATASUS</b></div><span class="badge pending">A integrar</span></article>
+      <article class="context-card"><span class="icon">＋</span><div><h3>Acesso ao diagnóstico</h3><p>CAPS/CAPSi, profissionais e estrutura assistencial.</p><b>Fonte: CNES / DATASUS</b></div><span class="badge pending">A integrar</span></article>
     </div>
     <article class="card mt20">
-      <div class="card-head"><div><span class="mini">DESENHO ANALÍTICO</span><h2>O que a próxima versão vai testar</h2></div></div>
+      <div class="card-head"><span class="mini">DESENHO ANALÍTICO</span><h2>Análises planejadas</h2></div>
       <div class="formula">TEA<sub>município</sub> ~ ambiente + condição social + acesso ao diagnóstico + estrutura demográfica</div>
       <div class="grid three mt16">
-        <div class="analysis-block"><b>Associação</b><span>Correlação Pearson/Spearman e regressões</span></div>
-        <div class="analysis-block"><b>Espaço</b><span>Moran global, LISA e clusters espaciais</span></div>
-        <div class="analysis-block"><b>Multivariado</b><span>PCA e modelos com controle de confundidores</span></div>
+        <div class="analysis-block"><b>Associação</b><span>Pearson/Spearman, diferenças relativas e regressões.</span></div>
+        <div class="analysis-block"><b>Espaço</b><span>Moran global, LISA e clusters espaciais.</span></div>
+        <div class="analysis-block"><b>Multivariado</b><span>PCA, Poisson/NegBin e modelos espaciais quando necessário.</span></div>
       </div>
     </article>
   </section>
 
   <section id="screen-metodo" class="screen">
-    <div class="section-title"><div><span class="eyebrow">MÉTODO ABERTO</span><h1>Como ler o TEA-Brasil</h1><p class="lead">A plataforma é exploratória e reprodutível. Cada indicador precisa conservar sua fonte, unidade, ano e limitação.</p></div></div>
+    <div class="section-title"><span class="eyebrow">MÉTODO ABERTO</span><h1>Como a plataforma foi feita</h1><p class="lead">TEA-Brasil foi construída para que os dados, cálculos e limitações sejam rastreáveis.</p></div>
+
+    <article class="card mt20">
+      <div class="credit-box">
+        <div>
+          <span class="mini">DESENVOLVIMENTO</span>
+          <p class="authors">Plataforma desenvolvida por <span>Ernandes Sobreira</span> e <span>Keitty Macuchapi</span>.</p>
+          <p class="note">A interface roda diretamente no navegador e consulta dados públicos. Não há banco privado de casos individuais.</p>
+        </div>
+        <div>
+          <span class="mini">TECNOLOGIAS</span>
+          <p>HTML, CSS e JavaScript para a interface; Leaflet para mapas e Chart.js para gráficos. As consultas ao Censo 2022 são feitas no SIDRA/IBGE.</p>
+          <div class="tech-list"><span>HTML5</span><span>CSS3</span><span>JavaScript</span><span>Leaflet</span><span>Chart.js</span><span>SIDRA/IBGE</span><span>GitHub Pages</span></div>
+        </div>
+      </div>
+    </article>
+
     <div class="grid two mt20">
-      <article class="card method-card"><span>01</span><h2>Desfecho</h2><p>Diagnóstico de transtorno do espectro autista informado no Censo 2022, conforme diagnóstico prévio por profissional de saúde.</p></article>
-      <article class="card method-card"><span>02</span><h2>Unidade territorial</h2><p>Brasil, unidades da federação e municípios. Para análises ambientais, a exposição é municipal — não individual.</p></article>
-      <article class="card method-card"><span>03</span><h2>Não é causalidade</h2><p>Uma associação entre TEA e PM2,5, calor, renda ou vegetação não demonstra que aquela variável causou TEA em indivíduos.</p></article>
-      <article class="card method-card"><span>04</span><h2>Acesso ao diagnóstico</h2><p>Municípios com mais especialistas e serviços podem identificar mais casos. CNES e oferta assistencial devem entrar nos modelos.</p></article>
-      <article class="card method-card"><span>05</span><h2>Ausente ≠ zero</h2><p>Células indisponíveis, suprimidas ou não integradas permanecem ausentes. A plataforma não preenche lacunas com zero.</p></article>
-      <article class="card method-card"><span>06</span><h2>Amostra</h2><p>Os resultados de TEA são provenientes dos resultados preliminares da amostra do Censo 2022. Municípios pequenos exigem cautela.</p></article>
+      <article class="card method-card"><span>01</span><h2>Desfecho</h2><p>Diagnóstico de transtorno do espectro autista informado no Censo Demográfico 2022, conforme diagnóstico prévio por profissional de saúde.</p></article>
+      <article class="card method-card"><span>02</span><h2>Unidade territorial</h2><p>Brasil, unidades da federação e municípios. Em futuras análises ambientais, a exposição será municipal, não individual.</p></article>
+      <article class="card method-card"><span>03</span><h2>Denominadores</h2><p>Total, sexo, idade e cor/raça usam denominadores diferentes. Cada percentual representa a proporção dentro do próprio grupo.</p></article>
+      <article class="card method-card"><span>04</span><h2>Não é causalidade</h2><p>Uma associação entre TEA e PM2,5, calor, renda ou vegetação não demonstra que aquela variável causou TEA em indivíduos.</p></article>
+      <article class="card method-card"><span>05</span><h2>Acesso ao diagnóstico</h2><p>Municípios com mais serviços e especialistas podem identificar mais casos. CNES e oferta assistencial precisam entrar nos modelos.</p></article>
+      <article class="card method-card"><span>06</span><h2>Ausente ≠ zero</h2><p>Células indisponíveis, suprimidas ou não integradas permanecem ausentes. A plataforma não preenche lacunas com zero.</p></article>
     </div>
+
+    <article class="card mt20 download-card">
+      <div class="card-head"><span class="mini">DADOS</span><h2>Fontes e download</h2></div>
+      <p>Os dados principais são do <strong>IBGE — Censo Demográfico 2022</strong>, consultados no SIDRA.</p>
+      <div class="btn-row">
+        <a class="btn" href="https://sidra.ibge.gov.br/tabela/10145" target="_blank" rel="noopener">Tabela 10145 — sexo e idade</a>
+        <a class="btn" href="https://sidra.ibge.gov.br/tabela/10147" target="_blank" rel="noopener">Tabela 10147 — cor ou raça</a>
+        <button id="btn-download-full" class="btn primary">Baixar base municipal usada aqui</button>
+      </div>
+      <p class="note">A base CSV gerada pela plataforma contém código IBGE, município, UF, população, número estimado de pessoas com TEA e percentual observado.</p>
+    </article>
+
     <article class="card mt20 sources">
-      <div class="card-head"><div><span class="mini">FONTES</span><h2>Origem dos dados</h2></div></div>
-      <a href="https://sidra.ibge.gov.br/tabela/10145" target="_blank" rel="noopener">SIDRA 10145 — TEA por sexo e idade</a>
-      <a href="https://sidra.ibge.gov.br/tabela/10147" target="_blank" rel="noopener">SIDRA 10147 — TEA por cor/raça</a>
+      <div class="card-head"><span class="mini">OUTRAS FONTES PARA AS PRÓXIMAS CAMADAS</span><h2>Ambiente e acesso</h2></div>
       <a href="https://www.ibge.gov.br/estatisticas/sociais/populacao/22827-censo-demografico-2022.html" target="_blank" rel="noopener">IBGE — Censo Demográfico 2022</a>
-      <a href="https://data.inpe.br/queimadas/" target="_blank" rel="noopener">INPE — Queimadas</a>
-      <a href="https://brasil.mapbiomas.org/" target="_blank" rel="noopener">MapBiomas</a>
-      <a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener">CNES / DATASUS</a>
+      <a href="https://data.inpe.br/queimadas/" target="_blank" rel="noopener">INPE — Programa Queimadas</a>
+      <a href="https://brasil.mapbiomas.org/" target="_blank" rel="noopener">MapBiomas — cobertura e uso da terra</a>
+      <a href="https://cnes.datasus.gov.br/" target="_blank" rel="noopener">CNES / DATASUS — serviços e profissionais de saúde</a>
+      <a href="https://portal.inmet.gov.br/" target="_blank" rel="noopener">INMET — dados meteorológicos</a>
     </article>
   </section>
 </main>
 
-<footer><strong>TEA•BRASIL</strong><span>Dados públicos • leitura territorial • ciência aberta</span><small>Versão inicial — Censo 2022/IBGE. Resultados descritivos não devem ser interpretados como causalidade.</small></footer>
+<footer>
+  <strong>TEA•BRASIL</strong>
+  <span>Desenvolvido por Ernandes Sobreira e Keitty Macuchapi</span>
+  <small>Dados públicos • Censo Demográfico 2022 / SIDRA-IBGE • resultados descritivos não devem ser interpretados como causalidade.</small>
+</footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="app.js"></script>
+<script src="app-v2.js"></script>
 </body>
 </html>
