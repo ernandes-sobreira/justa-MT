@@ -1,0 +1,55 @@
+{
+  "generated_at_utc": "2026-09-26T21:12:33.970213+00:00",
+  "source": "MapBiomas Brasil",
+  "collection": 11,
+  "reference_year": 2022,
+  "territorial_frame_outcome": "Censo Demográfico 2022: 5.570 municípios",
+  "territorial_frame_mapbiomas": "Coleção 11 distribuída em 2026, com malha municipal atualizada",
+  "source_page": "https://brasil.mapbiomas.org/downloads/estatisticas/",
+  "official_download_file_id": "1otOqymHuixvkRGVl65zTTNyfaHo46Gqk",
+  "official_download_url": "https://drive.google.com/uc?id=1otOqymHuixvkRGVl65zTTNyfaHo46Gqk&export=download",
+  "resolved_download_url": "https://drive.usercontent.google.com/download?id=1otOqymHuixvkRGVl65zTTNyfaHo46Gqk&export=download&confirm=t&uuid=35641f0f-cd03-4204-943d-58e1612b4793",
+  "source_workbook": "MAPBIOMAS_BRAZIL-COL.11-BIOME_STATE_MUNICIPALITY.xlsx",
+  "source_sheet": "COVERAGE_11",
+  "source_rows_scanned": 77606,
+  "expected_municipalities": 5570,
+  "municipalities_in_file": 5570,
+  "unique_codes": 5570,
+  "valid_environment_municipalities": 5567,
+  "missing_vegetation_cells": 3,
+  "missing_urban_cells": 3,
+  "expected_source_missing_codes": [
+    "2605459"
+  ],
+  "expected_source_extra_codes": [
+    "4300001",
+    "4300002",
+    "5101837"
+  ],
+  "intentional_na_codes": {
+    "2605459": {
+      "status": "na_fonte",
+      "note": "Fernando de Noronha não aparece na planilha municipal MapBiomas Coleção 11 usada nesta integração."
+    },
+    "5106240": {
+      "status": "na_incompatibilidade_territorial",
+      "note": "Nova Ubiratã: a planilha MapBiomas atual usa limites posteriores ao Censo 2022 após a criação de Boa Esperança do Norte; valor não forçado."
+    },
+    "5107925": {
+      "status": "na_incompatibilidade_territorial",
+      "note": "Sorriso: a planilha MapBiomas atual usa limites posteriores ao Censo 2022 após a criação de Boa Esperança do Norte; valor não forçado."
+    }
+  },
+  "definitions": {
+    "vegetacao_natural_pct_2022": "Sum of 2022 leaf-class hectares whose class_level_1 is Forest or Herbaceous and Shrubby Vegetation, divided by all mapped leaf-class hectares in the municipality. Water and natural non-vegetated classes are excluded.",
+    "area_urbanizada_pct_2022": "MapBiomas class 24 Urban Area hectares in 2022 divided by all mapped leaf-class hectares in the municipality.",
+    "municipality_cross_biome_rule": "Rows are summed by 7-digit IBGE geocode across all biome portions before percentages are calculated.",
+    "territorial_compatibility_rule": "The output always preserves the 5,570 Censo 2022 codes. Values are left NA, never imputed, where the current MapBiomas municipal grid cannot be matched safely to the 2022 Census municipal frame."
+  },
+  "rules": [
+    "Exactly 5570 Censo 2022 municipality codes must be present in the published file.",
+    "No municipality is imputed.",
+    "All environmental class areas use MapBiomas year 2022.",
+    "Known territorial incompatibilities are explicit NA values with notes, not zeros."
+  ]
+}
