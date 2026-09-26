@@ -1,0 +1,53 @@
+name: Atualizar dados TEA-Brasil
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/build_municipal_data.py'
+      - '.github/workflows/update-tea-brasil-data.yml'
+  schedule:
+    - cron: '17 9 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  build-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gerar base municipal oficial
+        run: python tea-brasil/scripts/build_municipal_data.py
+
+      - name: Validar 5.570 municípios
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          p=Path('tea-brasil/data/municipios_tea_renda_2022.csv')
+          rows=list(csv.DictReader(p.open(encoding='utf-8-sig')))
+          codes={r['codigo_ibge'] for r in rows}
+          assert len(rows)==5570, f'Esperado 5570 linhas, obtido {len(rows)}'
+          assert len(codes)==5570, f'Esperado 5570 códigos únicos, obtido {len(codes)}'
+          meta=json.loads(Path('tea-brasil/data/metadata.json').read_text(encoding='utf-8'))
+          assert meta['municipalities_in_file']==5570
+          assert meta['unique_codes']==5570
+          print('VALIDADO: 5.570 municípios e 5.570 códigos IBGE únicos')
+          print('Células ausentes de renda:', meta['missing_income_cells'])
+          print('Células ausentes de TEA:', meta['missing_tea_cells'])
+          PY
+
+      - name: Publicar arquivos consolidados no repositório
+        run: |
+          git config user.name 'tea-brasil-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tea-brasil/data/municipios_tea_renda_2022.csv tea-brasil/data/municipios_tea_renda_2022.json tea-brasil/data/metadata.json
+          if git diff --cached --quiet; then
+            echo 'Sem alterações nos dados.'
+          else
+            git commit -m 'Atualiza base oficial dos 5570 municípios do TEA-Brasil'
+            git push
+          fi
