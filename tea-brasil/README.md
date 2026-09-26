@@ -2,38 +2,53 @@
 
 Plataforma pública para explorar diferenças territoriais, demográficas, sociais e ambientais relacionadas ao diagnóstico informado de transtorno do espectro autista (TEA) no Brasil.
 
-## Versão inicial
+**Desenvolvida por Ernandes Sobreira e Keitty Macuchapi.**
 
-A versão 0.1 usa dados públicos do **Censo Demográfico 2022 / SIDRA-IBGE** e inclui:
+## Versão 0.2
+
+A plataforma usa dados públicos do **Censo Demográfico 2022 / SIDRA-IBGE** e inclui:
 
 - panorama nacional;
-- mapa por Unidade da Federação;
+- mapa por Unidade da Federação e município;
 - detalhamento municipal;
 - ranking exploratório com filtro de população;
 - perfil municipal por sexo, idade e cor/raça;
+- explicação automática do significado de cada percentual;
 - comparação município × município;
-- exportação CSV;
+- diferenças em pontos percentuais e em termos relativos;
+- comparação com Brasil e estado;
+- posição descritiva entre municípios com população mínima definida;
+- identificação da faixa etária de maior percentual observado;
+- exportação da base municipal completa e do ranking filtrado em CSV;
 - estrutura pronta para integrar ambiente, condição social e acesso ao diagnóstico.
 
 ## Fontes principais
 
-- SIDRA tabela 10145 — População residente, total e diagnosticada com autismo, por sexo e grupo de idade.
-- SIDRA tabela 10147 — População residente, total e diagnosticada com autismo, por cor ou raça.
-- Censo Demográfico 2022 — resultados preliminares da amostra.
+- [SIDRA tabela 10145](https://sidra.ibge.gov.br/tabela/10145) — população residente, total e diagnosticada com autismo, por sexo e grupo de idade.
+- [SIDRA tabela 10147](https://sidra.ibge.gov.br/tabela/10147) — população residente, total e diagnosticada com autismo, por cor ou raça.
+- [Censo Demográfico 2022 — IBGE](https://www.ibge.gov.br/estatisticas/sociais/populacao/22827-censo-demografico-2022.html).
 
 Camadas futuras previstas: INPE/BDQueimadas, INMET/INPE, MapBiomas, IBGE e CNES/DATASUS.
+
+## Como foi construída
+
+A interface foi desenvolvida em HTML, CSS e JavaScript e publicada no GitHub Pages. Os gráficos usam Chart.js e os mapas usam Leaflet. Os indicadores de TEA são consultados diretamente no SIDRA/IBGE pelo navegador. A base municipal consolidada pode ser exportada em CSV pela própria plataforma.
 
 ## Regras metodológicas
 
 1. Ausência de dado nunca é convertida em zero.
 2. Percentuais municipais são descritivos e não equivalem a risco causal.
-3. Municípios pequenos exigem cautela por maior instabilidade amostral.
-4. Acesso ao diagnóstico deve ser controlado nas análises ambientais e sociais.
-5. As dimensões são mantidas separadas; a plataforma não cria um superíndice arbitrário.
+3. O percentual total não é a soma nem a média simples dos percentuais masculino e feminino; ele usa a população total como denominador.
+4. Percentuais por sexo, idade e cor/raça usam a população do próprio grupo como denominador.
+5. Municípios pequenos exigem cautela por maior instabilidade amostral.
+6. Acesso ao diagnóstico deve ser controlado nas análises ambientais e sociais.
+7. As dimensões são mantidas separadas; a plataforma não cria um superíndice arbitrário.
 
-## Arquivos
+## Arquivos ativos
 
-- `index.html` — interface.
-- `styles.css` — identidade visual responsiva.
-- `app.js` — consulta de dados, ranking, mapas, perfis e comparação.
+- `index.html` — interface atual.
+- `styles-v2.css` — identidade visual responsiva da versão 0.2.
+- `app-v2.js` — consultas, mapas, perfis, downloads e análises automáticas.
 - `favicon.svg` — identidade visual.
+
+Os arquivos `styles.css` e `app.js` permanecem apenas como versão anterior de referência.
