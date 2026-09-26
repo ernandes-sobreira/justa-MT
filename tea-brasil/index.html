@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
   <link rel="stylesheet" href="styles-v2.css" />
+  <link rel="stylesheet" href="social-v1.css" />
 </head>
 <body>
 <header id="topbar">
@@ -224,9 +225,10 @@
       <div class="btn-row">
         <a class="btn" href="https://sidra.ibge.gov.br/tabela/10145" target="_blank" rel="noopener">Tabela 10145 — sexo e idade</a>
         <a class="btn" href="https://sidra.ibge.gov.br/tabela/10147" target="_blank" rel="noopener">Tabela 10147 — cor ou raça</a>
+        <a class="btn" href="https://sidra.ibge.gov.br/tabela/10295" target="_blank" rel="noopener">Tabela 10295 — renda</a>
         <button class="btn primary" onclick="document.getElementById('btn-download-full').click()">Baixar base municipal usada aqui</button>
       </div>
-      <p class="note">A base CSV gerada pela plataforma contém código IBGE, município, UF, população, número estimado de pessoas com TEA e percentual observado.</p>
+      <p class="note">A base CSV principal contém código IBGE, município, UF, população, número estimado de pessoas com TEA e percentual observado. O módulo de renda oferece também um CSV integrado TEA + renda.</p>
     </article>
 
     <article class="card mt20 sources">
@@ -249,5 +251,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="app-v2.js"></script>
+<script src="social-v1.js"></script>
 </body>
 </html>
