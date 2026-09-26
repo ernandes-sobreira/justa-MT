@@ -7,7 +7,7 @@ Indicator: establishments of type 70 = Centro de Atenção Psicossocial (CAPS).
 
 Hard rules:
 - Start from the validated list of exactly 5,570 IBGE municipality codes.
-- A municipality with a valid CNES response and no CAPS receives count=0 (real zero).
+- A municipality with a valid CNES result table and no CAPS rows receives count=0.
 - Any request/parse failure receives null and is counted as missing; failures are never turned into zero.
 """
 
@@ -88,9 +88,47 @@ def build_url(code7: str) -> str:
     return BASE_URL + "?" + urlencode(params)
 
 
+def is_valid_result_page(page: str) -> bool:
+    """Recognize the stable structure of a successfully returned CNES result page.
+
+    Important: when a municipality has zero establishments of the requested type,
+    CNES does not print the type label. It still returns the result table header:
+    CNES | Estabelecimento | CNPJ | CNPJ Mantenedora | TOTAL.
+    We require that structure plus the CNES indicator page identity before treating
+    an empty table as a real zero.
+    """
+    text = normalize_text(page)
+    folded = fold_text(text)
+    required = (
+        "CADASTRO NACIONAL DE ESTABELECIMENTOS DE SAUDE" in folded,
+        "INDICADORES - TIPO DE ESTABELECIMENTO" in folded,
+        "CNES" in folded,
+        "ESTABELECIMENTO" in folded,
+        "CNPJ" in folded,
+        "CNPJ MANTENEDORA" in folded,
+        "TOTAL" in folded,
+    )
+    return all(required)
+
+
+def looks_like_error_page(page: str) -> bool:
+    folded = fold_text(normalize_text(page))
+    return any(marker in folded for marker in (
+        "PROCEDIMENTO INVALIDO",
+        "SERVICO INDISPONIVEL",
+        "INTERNAL SERVER ERROR",
+        "BAD GATEWAY",
+        "GATEWAY TIMEOUT",
+        "ERRO NO SERVIDOR",
+    ))
+
+
 def parse_caps_count(page: str) -> int | None:
     text = normalize_text(page)
     folded = fold_text(text)
+
+    if looks_like_error_page(page):
+        return None
 
     # Historical CNES pages usually show "TOTAL N" when at least one unit is listed.
     m = re.search(r"\bTOTAL\s+(\d+)\b", folded)
@@ -103,10 +141,10 @@ def parse_caps_count(page: str) -> int | None:
     if re.search(r"NENHUM[AO]?\s+(?:REGISTRO|UNIDADE)", folded):
         return 0
 
-    # A successful CNES result page for the requested type can legitimately contain
-    # no rows and no TOTAL line. The type label itself proves that the filtered page
-    # was returned; after positives were caught above, that is a real zero.
-    if "CENTRO DE ATENCAO PSICOSSOCIAL" in folded:
+    # Critical CNES behavior confirmed against a zero-result municipality:
+    # valid empty pages contain the official result-table header but omit the
+    # requested establishment label and omit a numeric TOTAL. That is a real zero.
+    if is_valid_result_page(page):
         return 0
 
     return None
@@ -119,7 +157,7 @@ def fetch_one(rec: dict) -> dict:
         page = get_text(url)
         count = parse_caps_count(page)
         ok = count is not None
-        err = None if ok else "pagina_sem_marcador_valido_de_resultado"
+        err = None if ok else "pagina_sem_estrutura_valida_de_resultado"
     except Exception as exc:
         count = None
         ok = False
@@ -197,7 +235,8 @@ def main():
         "missing_codes": [x["codigo_ibge"] for x in missing],
         "rules": [
             "Zero is used only when CNES returns a valid filtered result page with no CAPS rows.",
-            "Request or parse failures remain null and are never converted to zero.",
+            "A valid empty CNES result page is recognized by its indicator-page identity and official table header (CNES, Estabelecimento, CNPJ, CNPJ Mantenedora, TOTAL); the CAPS type label is not required on empty results.",
+            "Request, server, or unrecognized-page failures remain null and are never converted to zero.",
             "All 5570 IBGE municipality codes must be present in the output."
         ]
     }
