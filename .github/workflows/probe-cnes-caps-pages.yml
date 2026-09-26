@@ -1,0 +1,16 @@
+name: Diagnosticar páginas CAPS CNES
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_cnes_caps_pages.py'
+      - '.github/workflows/probe-cnes-caps-pages.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar páginas de controle
+        run: python tea-brasil/scripts/probe_cnes_caps_pages.py
