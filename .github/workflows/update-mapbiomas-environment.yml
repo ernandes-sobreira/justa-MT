@@ -55,5 +55,7 @@ jobs:
             echo 'Sem alterações.'
           else
             git commit -m 'Atualiza ambiente MapBiomas 2022 dos 5570 municípios'
-            git push
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
           fi
