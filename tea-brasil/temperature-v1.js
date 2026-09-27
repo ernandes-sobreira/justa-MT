@@ -1,11 +1,11 @@
-/* TEA-Brasil — temperatura do ar municipal 2022, MapBiomas Atmosfera.
+/* TEA-Brasil — temperatura do ar municipal 2022, ERA5-Land via Open-Meteo.
    Este arquivo só é carregado pelo loader depois da validação/publicação da base
    nacional com exatamente 5.570 códigos municipais do Censo 2022. */
 const TEMP={loaded:false,rows:[],byCode:new Map(),byName:new Map(),meta:null,active:'mean',chart:null,map:null,geoLayer:null,stateAgg:new Map()};
 const TEMP_CFG={
   mean:{field:'mean',title:'Temperatura média anual',short:'Média',axis:'Temperatura média anual do ar (°C)'},
-  min:{field:'min',title:'Temperatura mínima anual',short:'Mínima',axis:'Temperatura mínima anual do ar (°C)'},
-  max:{field:'max',title:'Temperatura máxima anual',short:'Máxima',axis:'Temperatura máxima anual do ar (°C)'}
+  min:{field:'min',title:'Média anual das mínimas diárias',short:'Mínimas',axis:'Média anual das temperaturas mínimas diárias (°C)'},
+  max:{field:'max',title:'Média anual das máximas diárias',short:'Máximas',axis:'Média anual das temperaturas máximas diárias (°C)'}
 };
 const TEMP_STATES=[['11','RO','Rondônia'],['12','AC','Acre'],['13','AM','Amazonas'],['14','RR','Roraima'],['15','PA','Pará'],['16','AP','Amapá'],['17','TO','Tocantins'],['21','MA','Maranhão'],['22','PI','Piauí'],['23','CE','Ceará'],['24','RN','Rio Grande do Norte'],['25','PB','Paraíba'],['26','PE','Pernambuco'],['27','AL','Alagoas'],['28','SE','Sergipe'],['29','BA','Bahia'],['31','MG','Minas Gerais'],['32','ES','Espírito Santo'],['33','RJ','Rio de Janeiro'],['35','SP','São Paulo'],['41','PR','Paraná'],['42','SC','Santa Catarina'],['43','RS','Rio Grande do Sul'],['50','MS','Mato Grosso do Sul'],['51','MT','Mato Grosso'],['52','GO','Goiás'],['53','DF','Distrito Federal']];
 const TEMP_STATE_NAME=Object.fromEntries(TEMP_STATES.map(x=>[tpNorm(x[2]),{code:x[0],uf:x[1],name:x[2]}]));
@@ -33,8 +33,8 @@ async function loadTemperature(){
   tpStatus('Validando temperatura para os 5.570 municípios…');
   try{
     const [r,m]=await Promise.all([
-      fetch('data/mapbiomas_temperatura_2022.json',{cache:'no-store'}),
-      fetch('data/metadata_mapbiomas_temperatura_2022.json',{cache:'no-store'})
+      fetch('data/era5land_temperatura_2022.json',{cache:'no-store'}),
+      fetch('data/metadata_era5land_temperatura_2022.json',{cache:'no-store'})
     ]);
     if(!r.ok||!m.ok)throw new Error('base de temperatura ainda não publicada');
     const raw=await r.json(),meta=await m.json(),codes=new Set(raw.map(d=>String(d.codigo_ibge||'')));
@@ -42,7 +42,7 @@ async function loadTemperature(){
     if(meta?.universo?.linhas!==5570||meta?.universo?.codigos_unicos!==5570||meta?.status!=='validado_para_integracao')throw new Error('metadados não autorizam integração');
     TEMP.rows=raw.map(d=>({
       code:String(d.codigo_ibge),name:String(d.municipio||'').replace(/\s+-\s+[A-Z]{2}$/,''),uf:String(d.uf||''),
-      tea:tpNum(d.percentual_tea_2022),mean:tpNum(d.temperatura_media_ar_c_2022),min:tpNum(d.temperatura_minima_ar_c_2022),max:tpNum(d.temperatura_maxima_ar_c_2022),method:String(d.metodo_pixel_temperatura_2022||'')
+      tea:tpNum(d.percentual_tea_2022),mean:tpNum(d.temperatura_media_ar_c_2022),min:tpNum(d.temperatura_minima_ar_c_2022),max:tpNum(d.temperatura_maxima_ar_c_2022),method:'ponto_representativo'
     }));
     for(const d of TEMP.rows){TEMP.byCode.set(d.code,d);TEMP.byName.set(`${d.uf}|${tpNorm(d.name)}`,d)}
     for(const key of ['mean','min','max']){
@@ -104,25 +104,25 @@ async function renderTempMunicipalMap(uf){
 
 function installTempProfile(){
   const content=document.getElementById('profile-content');if(!content||document.getElementById('temp-profile-card'))return;
-  const card=document.createElement('article');card.id='temp-profile-card';card.className='card mt20';card.innerHTML=`<div class="card-head"><span class="mini">EXPOSIÇÃO TÉRMICA TERRITORIAL • 2022</span><h2>Temperatura do ar</h2></div><div class="mc-grid"><div class="mc-item"><span>Média anual</span><strong id="tp-prof-mean">—</strong><small>MapBiomas Atmosfera</small></div><div class="mc-item"><span>Mínima anual</span><strong id="tp-prof-min">—</strong><small>MapBiomas Atmosfera</small></div><div class="mc-item"><span>Máxima anual</span><strong id="tp-prof-max">—</strong><small>MapBiomas Atmosfera</small></div></div><p id="tp-prof-note" class="note">Valores territoriais derivados de ERA5-Land; não representam temperatura individual.</p>`;
+  const card=document.createElement('article');card.id='temp-profile-card';card.className='card mt20';card.innerHTML=`<div class="card-head"><span class="mini">EXPOSIÇÃO TÉRMICA TERRITORIAL • 2022</span><h2>Temperatura do ar</h2></div><div class="mc-grid"><div class="mc-item"><span>Média anual</span><strong id="tp-prof-mean">—</strong><small>ERA5-Land</small></div><div class="mc-item"><span>Média das mínimas diárias</span><strong id="tp-prof-min">—</strong><small>ERA5-Land</small></div><div class="mc-item"><span>Média das máximas diárias</span><strong id="tp-prof-max">—</strong><small>ERA5-Land</small></div></div><p id="tp-prof-note" class="note">Valores da grade ERA5-Land associados ao território; não representam temperatura individual.</p>`;
   content.appendChild(card);
   if(typeof window.loadProfile==='function'&&!window.loadProfile.__tempWrapped){const original=window.loadProfile;const wrapped=async function(code){const out=await original(code);renderTempProfile(code);return out};wrapped.__tempWrapped=true;window.loadProfile=wrapped}
 }
-function renderTempProfile(code){if(!TEMP.loaded)return;installTempProfile();const d=TEMP.byCode.get(String(code));if(!d)return;document.getElementById('tp-prof-mean').textContent=Number.isFinite(d.mean)?tpDec(d.mean,1)+' °C':'NA';document.getElementById('tp-prof-min').textContent=Number.isFinite(d.min)?tpDec(d.min,1)+' °C':'NA';document.getElementById('tp-prof-max').textContent=Number.isFinite(d.max)?tpDec(d.max,1)+' °C':'NA';document.getElementById('tp-prof-note').innerHTML=`<strong>${tpEsc(d.name)}</strong>: média, mínima e máxima anuais de 2022 extraídas da grade de ~10 km do MapBiomas Atmosfera. Método municipal: <strong>${d.method==='intersecao'?'pixels que intersectam o município':'pixels com centro no município'}</strong>. Análise territorial, sem inferência individual.`}
+function renderTempProfile(code){if(!TEMP.loaded)return;installTempProfile();const d=TEMP.byCode.get(String(code));if(!d)return;document.getElementById('tp-prof-mean').textContent=Number.isFinite(d.mean)?tpDec(d.mean,1)+' °C':'NA';document.getElementById('tp-prof-min').textContent=Number.isFinite(d.min)?tpDec(d.min,1)+' °C':'NA';document.getElementById('tp-prof-max').textContent=Number.isFinite(d.max)?tpDec(d.max,1)+' °C':'NA';document.getElementById('tp-prof-note').innerHTML=`<strong>${tpEsc(d.name)}</strong>: temperatura de 2022 da célula ERA5-Land (~0,1°) mais próxima de um ponto representativo do município (centroide; point-on-surface quando necessário), sem correção de elevação. Não é média areal do polígono municipal. Análise territorial, sem inferência individual.`}
 function renderTempProfileCurrent(){const code=document.getElementById('profile-mun')?.value;if(code)renderTempProfile(code)}
 
 function initTemperature(){
   const context=document.getElementById('screen-contexto');if(!context||document.getElementById('temperature-module'))return;
   const box=document.createElement('article');box.id='temperature-module';box.className='card social-module';box.innerHTML=`
-    <div class="social-head"><div class="social-title"><div class="social-num">05</div><div><span class="mini">CLIMA • DADO INTEGRADO</span><h2>Temperatura do ar</h2><p>MapBiomas Atmosfera • ERA5-Land • 2022 • ~10 km</p></div></div><span class="badge integrated">5.570 códigos</span></div>
-    <div class="social-actions"><button id="temp-load" class="btn primary">Recarregar base</button><a class="btn" href="data/mapbiomas_temperatura_2022.csv" download>Baixar CSV</a><a class="btn" href="data/metadata_mapbiomas_temperatura_2022.json" target="_blank">Metadados</a><a class="btn" href="https://brasil.mapbiomas.org/iniciativas-e-produtos/atmosfera/temperatura/temperatura-do-ar/" target="_blank" rel="noopener">Fonte oficial</a></div>
+    <div class="social-head"><div class="social-title"><div class="social-num">05</div><div><span class="mini">CLIMA • DADO INTEGRADO</span><h2>Temperatura do ar</h2><p>ERA5-Land • ECMWF • via Open-Meteo • 2022 • 0,1°</p></div></div><span class="badge integrated">5.570 códigos</span></div>
+    <div class="social-actions"><button id="temp-load" class="btn primary">Recarregar base</button><a class="btn" href="data/era5land_temperatura_2022.csv" download>Baixar CSV</a><a class="btn" href="data/metadata_era5land_temperatura_2022.json" target="_blank">Metadados</a><a class="btn" href="https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land" target="_blank" rel="noopener">ERA5-Land</a><a class="btn" href="https://open-meteo.com/en/docs/historical-weather-api" target="_blank" rel="noopener">API usada</a></div>
     <div id="temp-status" class="status small">Validando base completa…</div>
     <div class="social-kpis"><div class="social-k"><strong id="temp-mediana">—</strong><span>mediana municipal da média anual</span></div><div class="social-k"><strong id="temp-valid">—</strong><span>municípios com média válida</span></div><div class="social-k"><strong id="temp-r">—</strong><span>Pearson com % TEA</span></div><div class="social-k"><strong id="temp-r2">—</strong><span>R²</span></div></div>
-    <div class="social-actions mt16"><button class="btn temp-tab on" data-temp="mean">Média</button><button class="btn temp-tab" data-temp="min">Mínima</button><button class="btn temp-tab" data-temp="max">Máxima</button></div>
+    <div class="social-actions mt16"><button class="btn temp-tab on" data-temp="mean">Média</button><button class="btn temp-tab" data-temp="min">Mínimas</button><button class="btn temp-tab" data-temp="max">Máximas</button></div>
     <div id="temp-reading" class="social-explain mt16"></div>
     <div class="social-grid"><div><div class="card-head"><span class="mini">MAPA INTERATIVO</span><h2>Temperatura municipal</h2></div><div class="social-actions"><select id="temp-map-uf" class="btn"><option value="">Brasil • estados</option>${TEMP_STATES.map(x=>`<option value="${x[1]}">${x[2]}</option>`).join('')}</select><button id="temp-map-br" class="btn">Voltar ao Brasil</button></div><div id="temp-map" style="height:440px;border-radius:16px;overflow:hidden;margin-top:12px"></div><div id="temp-map-legend" class="legend-box"></div></div><div><div class="card-head"><span class="mini">12 MAIORES VALORES</span><h2 id="temp-detail-title">Temperatura média anual × TEA</h2></div><div class="social-table"><table><thead><tr><th>#</th><th>Município</th><th>UF</th><th class="num">Temperatura</th><th class="num">% TEA</th></tr></thead><tbody id="temp-rank-body"></tbody></table></div></div></div>
     <div class="social-chart mt20" style="height:360px"><canvas id="temp-scatter"></canvas></div>
-    <div class="social-warning">Temperatura é exposição territorial agregada. A associação com TEA é ecológica e pode refletir acesso ao diagnóstico, composição populacional e outros fatores; não demonstra efeito individual.</div>`;
+    <div class="social-warning">A temperatura representa a célula ERA5-Land mais próxima do ponto representativo municipal, não uma medição em cada residência nem uma média areal do município. A associação com TEA é ecológica e pode refletir acesso ao diagnóstico, composição populacional e outros fatores; não demonstra efeito individual.</div>`;
   const anchor=document.getElementById('fire-module')||document.getElementById('environment-module')||context.querySelector('.social-module:last-of-type');if(anchor)anchor.insertAdjacentElement('afterend',box);else context.appendChild(box);
   document.getElementById('temp-load').addEventListener('click',loadTemperature);document.querySelectorAll('.temp-tab').forEach(b=>b.addEventListener('click',()=>renderTempDetail(b.dataset.temp)));document.getElementById('temp-map-uf').addEventListener('change',e=>e.target.value?renderTempMunicipalMap(e.target.value):renderTempMap());document.getElementById('temp-map-br').addEventListener('click',()=>{document.getElementById('temp-map-uf').value='';renderTempMap()});
   setTimeout(loadTemperature,400);
