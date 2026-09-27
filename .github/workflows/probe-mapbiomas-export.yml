@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'tea-brasil/scripts/probe_mapbiomas_download_api.py'
+      - 'tea-brasil/scripts/probe_mapbiomas_export_real.py'
       - '.github/workflows/probe-mapbiomas-export.yml'
 
 permissions:
@@ -13,8 +14,8 @@ permissions:
 jobs:
   probe-export:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Descobrir territorio nacional e contrato de exportacao
-        run: python tea-brasil/scripts/probe_mapbiomas_download_api.py
+      - name: Testar exportacao real de temperatura media 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_export_real.py
