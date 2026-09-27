@@ -1,0 +1,20 @@
+name: Probe INPE fogo 2022
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_inpe_fire_2022.py'
+      - '.github/workflows/probe-inpe-fire-2022.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar arquivo anual INPE 2022
+        run: python tea-brasil/scripts/probe_inpe_fire_2022.py
