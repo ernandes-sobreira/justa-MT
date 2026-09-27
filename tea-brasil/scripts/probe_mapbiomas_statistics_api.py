@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect only the exact MapBiomas subtheme-statistics callers used by the SPA."""
+"""Inspect the exact MapBiomas ranking/subtheme parameter builder used by the SPA."""
 from __future__ import annotations
 
 import re
@@ -20,17 +20,17 @@ def compact(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 
-def dump(js: str, needle: str, radius: int = 2200, limit: int = 20) -> None:
-    pos = 0; n = 0
-    while n < limit:
+def dump(js: str, needle: str, radius: int = 5000, limit: int = 12) -> None:
+    pos = 0; hits = 0
+    while hits < limit:
         i = js.find(needle, pos)
         if i < 0:
             break
-        n += 1
-        print(f'\n--- {needle} HIT {n} @ {i} ---')
+        hits += 1
+        print(f'\n--- {needle} HIT {hits} @ {i} ---')
         print(compact(js[max(0, i-radius):min(len(js), i+len(needle)+radius)]))
         pos = i + len(needle)
-    print(f'\nCOUNT {needle} {n}')
+    print(f'\nCOUNT {needle} {hits}')
 
 
 def main():
@@ -42,13 +42,9 @@ def main():
         if 'statistics/ranking/subtheme' not in js:
             continue
         print('BUNDLE', url, 'BYTES', len(js))
-        # Generated client functions + their callers. String find only: no heavy regex scan.
-        for needle in (
-            'statistics/ranking/subtheme',
-            'statistics/subtheme',
-            'O$(', 'z$(', 'P$(', 'A$(',
-            'subtheme_ranking', 'subtheme_historical', 'subtheme_summary'
-        ):
+        # Dq is the wrapper that strips `disabled` then calls O$ -> ranking/subtheme.
+        # Its downstream callers expose the exact query object used by the ranking chart.
+        for needle in ('Dq(', 'subtheme_ranking', 'territoryCategoryId', 'pageSize', 'sortDirection', 'rankingData'):
             dump(js, needle)
 
 
