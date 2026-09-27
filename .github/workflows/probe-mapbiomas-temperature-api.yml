@@ -7,6 +7,8 @@ on:
       - 'tea-brasil/scripts/probe_mapbiomas_temperature_api.py'
       - 'tea-brasil/scripts/probe_mapbiomas_statistics_api.py'
       - 'tea-brasil/scripts/probe_mapbiomas_ranking_api.py'
+      - 'tea-brasil/scripts/probe_mapbiomas_download_api.py'
+      - 'tea-brasil/scripts/compare_mapbiomas_2025_ibge2022.py'
       - '.github/workflows/probe-mapbiomas-temperature-api.yml'
 
 concurrency:
@@ -28,3 +30,9 @@ jobs:
         run: python tea-brasil/scripts/probe_mapbiomas_ranking_api.py
       - name: Localizar consulta de tarefas assíncronas
         run: python tea-brasil/scripts/probe_mapbiomas_statistics_api.py
+      - name: Localizar rotas públicas de download e exportação
+        run: python tea-brasil/scripts/probe_mapbiomas_download_api.py
+      - name: Instalar leitor DBF/SHP leve
+        run: python -m pip install --disable-pip-version-check --quiet pyshp
+      - name: Comparar malha municipal atual com universo Censo 2022
+        run: python tea-brasil/scripts/compare_mapbiomas_2025_ibge2022.py
