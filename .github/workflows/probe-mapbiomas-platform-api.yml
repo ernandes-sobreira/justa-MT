@@ -1,0 +1,20 @@
+name: Probe API pública MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_platform_api.py'
+      - '.github/workflows/probe-mapbiomas-platform-api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar bundle e endpoints da plataforma
+        run: python tea-brasil/scripts/probe_mapbiomas_platform_api.py
