@@ -1,0 +1,20 @@
+name: Probe rápido MapBiomas temperatura média 2022
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_mean_2022_once.py'
+      - '.github/workflows/probe-mapbiomas-mean-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mean2022:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar temperatura média municipal 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_mean_2022_once.py
