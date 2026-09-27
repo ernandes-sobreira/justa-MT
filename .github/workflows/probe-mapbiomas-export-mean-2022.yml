@@ -1,0 +1,20 @@
+name: Probe exportacao temperatura media 2022
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_export_mean_2022.py'
+      - '.github/workflows/probe-mapbiomas-export-mean-2022.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exportmean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exportar raster nacional 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_export_mean_2022.py
