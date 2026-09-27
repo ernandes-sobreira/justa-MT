@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Read-only probe for the public MapBiomas Platform API used by Atmosphere.
+"""Read-only probe for MapBiomas Atmosphere public API.
 
-Goal: identify the public endpoints and request shape used by the 2022 municipal
-air-temperature statistics before falling back to raster zonal statistics.
-This script never writes TEA-Brasil data files.
+Discovers the public request shape used by the MapBiomas Brazil dashboard and
+locates metadata for 2022 air-temperature subthemes. Never writes TEA data.
 """
 from __future__ import annotations
 
@@ -15,17 +14,22 @@ import urllib.request
 
 HOME = 'https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 API = 'https://dev.plataforma.mapbiomas.org/api/v1'
-THEME_MACHINE = 'atmosphere_annual_air_temperature'
+TENANT = 'mapbiomas'
+TARGETS = {
+    'atmosphere_annual_air_temperature',
+    'atmosphere_annual_mean_air_temperature',
+    'atmosphere_annual_maximum_air_temperature',
+    'atmosphere_annual_minimum_air_temperature',
+    'atmosphere_annual_fine_particulate_matter_pm2_5',
+}
 UA = {'User-Agent': 'TEA-Brasil/1.0 (+https://ernandes-sobreira.github.io/justa-MT/tea-brasil/)'}
 
 
-def request(url: str, method: str = 'GET', data=None, timeout: int = 90):
-    payload = None
-    headers = dict(UA)
-    if data is not None:
-        payload = json.dumps(data).encode('utf-8')
-        headers['Content-Type'] = 'application/json'
-    req = urllib.request.Request(url, data=payload, headers=headers, method=method)
+def request(url: str, timeout: int = 90, headers=None):
+    h = dict(UA)
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h, method='GET')
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return r.status, r.headers.get('content-type', ''), r.geturl(), r.read(), dict(r.headers)
@@ -35,86 +39,97 @@ def request(url: str, method: str = 'GET', data=None, timeout: int = 90):
         return -1, '', url, str(e).encode(), {}
 
 
-def text_body(body: bytes) -> str:
-    return body.decode('utf-8', errors='replace')
+def txt(b):
+    return b.decode('utf-8', errors='replace')
 
 
-def contexts(text: str, needle: str, radius: int = 2500, limit: int = 8):
-    low = text.lower(); target = needle.lower(); start = 0; out = []
+def add_tenant(url: str) -> str:
+    sep = '&' if '?' in url else '?'
+    return f'{url}{sep}cpTenant={urllib.parse.quote(TENANT)}'
+
+
+def show(label, url, headers=None, body_limit=12000):
+    status, ctype, final, body, _ = request(url, headers=headers)
+    body_txt = txt(body)
+    print(f'\n=== {label} ===')
+    print('STATUS', status, 'TYPE', ctype, 'FINAL', final, 'BYTES', len(body))
+    print('BODY', re.sub(r'\s+', ' ', body_txt[:body_limit]))
+    return status, ctype, body_txt
+
+
+def walk(obj, path='$'):
+    if isinstance(obj, dict):
+        key = obj.get('key')
+        if isinstance(key, str) and key in TARGETS:
+            print('\n*** TARGET FOUND', key, 'AT', path, '***')
+            print(json.dumps(obj, ensure_ascii=False, indent=2)[:50000])
+        for k, v in obj.items():
+            walk(v, f'{path}.{k}')
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            walk(v, f'{path}[{i}]')
+
+
+def try_json(label, url, headers=None):
+    status, ctype, body = show(label, url, headers=headers)
+    if status == 200 and 'json' in ctype.lower():
+        try:
+            data = json.loads(body)
+            print('JSON_TOP_KEYS', list(data)[:50] if isinstance(data, dict) else f'LIST[{len(data)}]')
+            walk(data)
+            return data
+        except Exception as e:
+            print('JSON_PARSE_ERROR', repr(e))
+    return None
+
+
+def contexts(text: str, needle: str, radius=2200, limit=10):
+    low = text.lower(); target = needle.lower(); pos = 0; out = []
     while len(out) < limit:
-        i = low.find(target, start)
+        i = low.find(target, pos)
         if i < 0:
             break
         out.append(re.sub(r'\s+', ' ', text[max(0, i-radius):min(len(text), i+len(needle)+radius)]))
-        start = i + len(target)
+        pos = i + len(target)
     return out
 
 
-def show_http(label: str, url: str):
-    status, ctype, final, body, headers = request(url)
-    txt = text_body(body)
-    print(f'\n=== HTTP {label} ===')
-    print('STATUS', status, 'TYPE', ctype, 'FINAL', final, 'BYTES', len(body))
-    print('BODY', re.sub(r'\s+', ' ', txt[:20000]))
-    return status, ctype, txt
-
-
 def main():
+    # First use the tenant query parameter visible in the dashboard client.
+    urls = [
+        ('project', add_tenant(f'{API}/projects/by/key/brazil')),
+        ('themes', add_tenant(f'{API}/brazil/themes?page=1&pageSize=1000')),
+        ('subthemes', add_tenant(f'{API}/brazil/subthemes?page=1&pageSize=1000')),
+        ('territory_categories', add_tenant(f'{API}/brazil/territories/categories?page=1&pageSize=1000')),
+        ('territories', add_tenant(f'{API}/brazil/territories?page=1&pageSize=5')),
+    ]
+    responses = {}
+    for label, url in urls:
+        responses[label] = try_json(label, url)
+
+    # If query parameter alone is insufficient, test likely tenant headers read-only.
+    if not any(v is not None for v in responses.values()):
+        print('\n=== TENANT HEADER FALLBACKS ===')
+        for hdr in ('x-tenant-id', 'x-tenant', 'tenant-id', 'tenant', 'cp-tenant', 'x-cp-tenant'):
+            try_json(f'project header {hdr}', f'{API}/projects/by/key/brazil', headers={hdr: TENANT})
+
+    # Inspect exact client contexts for transport and route constructor functions.
     status, _, final, body, _ = request(HOME)
     if status != 200:
         raise SystemExit(f'Platform home returned {status}')
-    html = text_body(body)
+    html = txt(body)
     scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
     bundles = [urllib.parse.urljoin(final, s) for s in scripts if '/assets/index-' in s]
     if not bundles:
         raise SystemExit('Main JS bundle not found')
-
-    _, ctype, bundle_url, raw, _ = request(bundles[0])
-    js = text_body(raw)
-    print('BUNDLE', bundle_url, ctype, len(raw))
-
-    # Show literal API route fragments, prioritizing the analysis/statistics machinery.
-    print('\n=== UNIQUE API ROUTE LITERALS ===')
-    route_re = re.compile(r'https://dev\.plataforma\.mapbiomas\.org/api/v1/[^`"\'\s)}]+')
-    routes = sorted(set(route_re.findall(js)))
-    interesting = [r for r in routes if any(k in r.lower() for k in (
-        'stat', 'rank', 'chart', 'theme', 'subtheme', 'territor', 'project', 'dashboard'
-    ))]
-    for r in interesting[:300]:
-        print(r)
-    print('ROUTES_TOTAL', len(routes), 'INTERESTING', len(interesting))
-
-    print('\n=== FOCUSED BUNDLE CONTEXT ===')
-    for needle in [
-        THEME_MACHINE,
-        'subtheme_ranking',
-        'subtheme_historical',
-        'statistics',
-        'statistic',
-        'ranking',
-        'territoryId',
-        'territory_id',
-        'pixelValues',
-        'projectKey',
-    ]:
+    _, _, bundle_url, raw, _ = request(bundles[0])
+    js = txt(raw)
+    print('\nBUNDLE', bundle_url, 'BYTES', len(raw))
+    for needle in ['cpTenant', 'tenantId', '/subthemes', '/themes', '/territories', 'statisticsController', 'subtheme_ranking']:
         hits = contexts(js, needle)
-        print(f'\n--- {needle} : {len(hits)} hit(s) ---')
+        print(f'\n--- CONTEXT {needle}: {len(hits)} ---')
         for i, hit in enumerate(hits, 1):
-            print(f'[{i}] {hit[:6000]}')
-
-    # Public project configuration. Validation errors are useful because they expose
-    # route shape and required query parameters without mutating anything.
-    candidates = [
-        ('project_brazil', f'{API}/projects/by/key/brazil'),
-        ('project_mapbiomas', f'{API}/projects/by/key/mapbiomas'),
-        ('brazil_themes', f'{API}/brazil/themes'),
-        ('brazil_territories', f'{API}/brazil/territories'),
-        ('brazil_territory_categories', f'{API}/brazil/territories/categories'),
-        ('brazil_statistics', f'{API}/brazil/statistics'),
-        ('brazil_theme_temperature', f'{API}/brazil/themes/{THEME_MACHINE}'),
-    ]
-    for label, url in candidates:
-        show_http(label, url)
+            print(f'[{i}] {hit[:6500]}')
 
 
 if __name__ == '__main__':
