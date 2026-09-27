@@ -1,0 +1,91 @@
+name: Smoke TEA-Brasil fogo no Pages
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/smoke-fire-pages.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aguardar e verificar assets publicados
+        run: |
+          python - <<'PY'
+          import time, urllib.request
+          base='https://ernandes-sobreira.github.io/justa-MT/tea-brasil/'
+          wanted={
+            'social-v1.js': "fire-v1.js",
+            'fire-v1.js': "id=\"fire-module\"",
+            'data/metadata_inpe_fogo_2022.json': '"municipalities_in_file": 5570',
+          }
+          for path,needle in wanted.items():
+              url=base+path
+              last=''
+              for _ in range(30):
+                  try:
+                      req=urllib.request.Request(url,headers={'Cache-Control':'no-cache','User-Agent':'TEA-Brasil-smoke/1.0'})
+                      with urllib.request.urlopen(req,timeout=20) as r:
+                          text=r.read().decode('utf-8-sig')
+                      if needle in text:
+                          print('OK asset',path,len(text))
+                          break
+                      last=f'conteúdo sem {needle!r}'
+                  except Exception as e:
+                      last=repr(e)
+                  time.sleep(2)
+              else:
+                  raise SystemExit(f'Falha em {path}: {last}')
+          PY
+      - name: Preparar navegador Chromium
+        run: |
+          mkdir -p /tmp/tea-fire-smoke
+          cd /tmp/tea-fire-smoke
+          npm init -y >/dev/null 2>&1
+          npm install --silent playwright
+          npx playwright install --with-deps chromium
+      - name: Testar módulo no site publicado
+        run: |
+          cd /tmp/tea-fire-smoke
+          cat > smoke.js <<'JS'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1440,height:1100}});
+            const errors=[];
+            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
+            page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+            await page.goto('https://ernandes-sobreira.github.io/justa-MT/tea-brasil/?smoke='+Date.now(),{waitUntil:'domcontentloaded',timeout:90000});
+            await page.waitForSelector('#fire-module',{state:'attached',timeout:90000});
+            await page.waitForFunction(()=>{
+              const e=document.querySelector('#fire-status');
+              return e && /VALIDADO/.test(e.textContent||'');
+            },null,{timeout:90000});
+            const info=await page.evaluate(()=>({
+              loader:[...document.scripts].some(s=>s.dataset.teaExtra==='fire'),
+              module:!!document.querySelector('#fire-module'),
+              status:document.querySelector('#fire-status')?.textContent||'',
+              total:document.querySelector('#fire-total')?.textContent||'',
+              positive:document.querySelector('#fire-positive')?.textContent||'',
+              rankingRows:document.querySelectorAll('#fire-rank-body tr').length,
+              fireData:typeof FIRE!=='undefined'?{loaded:FIRE.loaded,rows:FIRE.rows.length,unique:new Set(FIRE.rows.map(d=>d.code)).size}:null
+            }));
+            console.log(JSON.stringify(info,null,2));
+            if(!info.loader||!info.module||!info.fireData?.loaded)throw new Error('módulo de fogo não carregou');
+            if(info.fireData.rows!==5570||info.fireData.unique!==5570)throw new Error('base runtime não preserva 5570 códigos');
+            if(!/5\.570\/5\.570/.test(info.status))throw new Error('status não confirma 5.570/5.570');
+            if(info.total!=='200.763')throw new Error('total runtime inesperado: '+info.total);
+            if(info.positive!=='4.038/5.570')throw new Error('cobertura positiva runtime inesperada: '+info.positive);
+            if(info.rankingRows!==12)throw new Error('ranking não renderizou 12 linhas');
+            const relevant=errors.filter(x=>!/(favicon|ERR_BLOCKED_BY_CLIENT)/i.test(x));
+            if(relevant.length)throw new Error('erros no navegador: '+relevant.join(' | '));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node smoke.js
