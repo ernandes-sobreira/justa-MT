@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extrai do bundle público apenas os trechos ligados à estatística contínua."""
+"""Lista apenas rotas/trechos /statistics/ do bundle público MapBiomas."""
 import re, urllib.parse, urllib.request
 HOME='https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 UA={'User-Agent':'TEA-Brasil/1.0'}
@@ -12,13 +12,12 @@ def main():
     for src in scripts:
         if '/assets/' not in src or not src.endswith('.js'): continue
         url=urllib.parse.urljoin(HOME,src); js=get(url)
-        if 'continuous' not in js.lower(): continue
+        if '/statistics/' not in js: continue
         print('BUNDLE',url)
-        low=js.lower(); p=0; n=0
-        while n<12:
-            i=low.find('continuous',p)
-            if i<0: break
-            text=re.sub(r'\s+',' ',js[max(0,i-1800):min(len(js),i+2600)])
-            print(f'CTX{n+1}',text[:4400])
-            p=i+10; n+=1
+        vals=set()
+        for m in re.finditer(r'/statistics/',js):
+            i=m.start(); frag=js[max(0,i-220):min(len(js),i+520)]
+            vals.add(re.sub(r'\s+',' ',frag))
+        print('COUNT',len(vals))
+        for n,v in enumerate(sorted(vals),1):print(f'STAT{n}',v[:760])
 if __name__=='__main__':main()
