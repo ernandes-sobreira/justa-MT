@@ -1,0 +1,20 @@
+name: Probe INPE fogo downloads
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_inpe_fire_downloads.py'
+      - '.github/workflows/probe-inpe-fire-downloads.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Localizar endpoints oficiais de focos anuais
+        run: python tea-brasil/scripts/probe_inpe_fire_downloads.py
