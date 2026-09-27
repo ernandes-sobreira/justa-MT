@@ -1,0 +1,53 @@
+name: Gerar temperatura ERA5-Land 2022
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/build_era5land_temperatura_2022.py'
+      - '.github/workflows/build-era5land-temperatura-2022.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias
+        run: python -m pip install --disable-pip-version-check --quiet pandas numpy geopandas pyogrio
+      - name: Probe ERA5-Land
+        run: python tea-brasil/scripts/build_era5land_temperatura_2022.py --probe 5
+      - name: Gerar 5.570 municipios
+        run: python tea-brasil/scripts/build_era5land_temperatura_2022.py
+      - name: Validacao final independente
+        run: |
+          python - <<'PY'
+          import json, pandas as pd
+          from pathlib import Path
+          base=Path('tea-brasil/data')
+          csv=base/'era5land_temperatura_2022.csv'
+          meta=base/'metadata_era5land_temperatura_2022.json'
+          df=pd.read_csv(csv,dtype={'codigo_ibge':'string'},encoding='utf-8-sig',na_values=['NA'])
+          m=json.loads(meta.read_text(encoding='utf-8'))
+          assert len(df)==5570, len(df)
+          assert df.codigo_ibge.nunique()==5570, df.codigo_ibge.nunique()
+          assert m['status']=='validado_para_integracao'
+          assert m['universo']['linhas']==5570 and m['universo']['codigos_unicos']==5570
+          for c in ['temperatura_media_ar_c_2022','temperatura_maxima_ar_c_2022','temperatura_minima_ar_c_2022']:
+              assert m['cobertura'][c]['validos'] + m['cobertura'][c]['na'] == 5570
+          print('VALIDACAO_FINAL_OK', len(df), df.codigo_ibge.nunique(), m['cobertura'])
+          PY
+      - name: Publicar base validada
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tea-brasil/data/era5land_temperatura_2022.csv tea-brasil/data/era5land_temperatura_2022.json tea-brasil/data/metadata_era5land_temperatura_2022.json
+          if git diff --cached --quiet; then
+            echo 'Sem alteracoes para publicar.'
+          else
+            git commit -m 'Integra temperatura ERA5-Land 2022 para 5570 municipios'
+            git push
+          fi
