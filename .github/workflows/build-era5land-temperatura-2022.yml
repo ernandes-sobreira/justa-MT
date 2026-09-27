@@ -49,5 +49,6 @@ jobs:
             echo 'Sem alteracoes para publicar.'
           else
             git commit -m 'Integra temperatura ERA5-Land 2022 para 5570 municipios'
-            git push
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
