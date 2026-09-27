@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """Read-only probe for MapBiomas Atmosphere public API.
 
-Discovers the public request shape used by the MapBiomas Brazil dashboard and
-locates metadata for 2022 air-temperature subthemes. Never writes TEA data.
+Uses the same production API and tenant header as the public MapBiomas client,
+locates temperature/PM2.5 subthemes, and prints their asset metadata. Never
+writes TEA-Brasil data files.
 """
 from __future__ import annotations
 
 import json
 import re
 import urllib.error
-import urllib.parse
 import urllib.request
 
-HOME = 'https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
-API = 'https://dev.plataforma.mapbiomas.org/api/v1'
+API = 'https://prd.plataforma.mapbiomas.org/api/v1'
 TENANT = 'mapbiomas'
 TARGETS = {
     'atmosphere_annual_air_temperature',
@@ -22,114 +21,101 @@ TARGETS = {
     'atmosphere_annual_minimum_air_temperature',
     'atmosphere_annual_fine_particulate_matter_pm2_5',
 }
-UA = {'User-Agent': 'TEA-Brasil/1.0 (+https://ernandes-sobreira.github.io/justa-MT/tea-brasil/)'}
+HEADERS = {
+    'User-Agent': 'TEA-Brasil/1.0 (+https://ernandes-sobreira.github.io/justa-MT/tea-brasil/)',
+    'tenant-id': TENANT,
+    'Accept': 'application/json',
+}
 
 
-def request(url: str, timeout: int = 90, headers=None):
-    h = dict(UA)
-    if headers:
-        h.update(headers)
-    req = urllib.request.Request(url, headers=h, method='GET')
+def request(url: str, timeout: int = 120):
+    req = urllib.request.Request(url, headers=HEADERS, method='GET')
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.status, r.headers.get('content-type', ''), r.geturl(), r.read(), dict(r.headers)
+            return r.status, r.headers.get('content-type', ''), r.geturl(), r.read()
     except urllib.error.HTTPError as e:
-        return e.code, e.headers.get('content-type', ''), e.geturl(), e.read(), dict(e.headers)
+        return e.code, e.headers.get('content-type', ''), e.geturl(), e.read()
     except Exception as e:
-        return -1, '', url, str(e).encode(), {}
+        return -1, '', url, str(e).encode()
 
 
-def txt(b):
-    return b.decode('utf-8', errors='replace')
-
-
-def add_tenant(url: str) -> str:
-    sep = '&' if '?' in url else '?'
-    return f'{url}{sep}cpTenant={urllib.parse.quote(TENANT)}'
-
-
-def show(label, url, headers=None, body_limit=12000):
-    status, ctype, final, body, _ = request(url, headers=headers)
-    body_txt = txt(body)
+def get_json(label: str, url: str):
+    status, ctype, final, body = request(url)
+    text = body.decode('utf-8', errors='replace')
     print(f'\n=== {label} ===')
     print('STATUS', status, 'TYPE', ctype, 'FINAL', final, 'BYTES', len(body))
-    print('BODY', re.sub(r'\s+', ' ', body_txt[:body_limit]))
-    return status, ctype, body_txt
+    if status != 200:
+        print('BODY', re.sub(r'\s+', ' ', text[:12000]))
+        return None
+    try:
+        data = json.loads(text)
+    except Exception as e:
+        print('JSON_ERROR', repr(e), 'BODY', text[:5000])
+        return None
+    if isinstance(data, dict):
+        print('TOP_KEYS', list(data.keys())[:80])
+    else:
+        print('TOP', type(data).__name__, 'LEN', len(data) if hasattr(data, '__len__') else '?')
+    return data
 
 
-def walk(obj, path='$'):
+def collect_targets(obj, path='$', out=None):
+    if out is None:
+        out = []
     if isinstance(obj, dict):
         key = obj.get('key')
-        if isinstance(key, str) and key in TARGETS:
-            print('\n*** TARGET FOUND', key, 'AT', path, '***')
-            print(json.dumps(obj, ensure_ascii=False, indent=2)[:50000])
+        if key in TARGETS:
+            out.append((path, obj))
         for k, v in obj.items():
-            walk(v, f'{path}.{k}')
+            collect_targets(v, f'{path}.{k}', out)
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
-            walk(v, f'{path}[{i}]')
-
-
-def try_json(label, url, headers=None):
-    status, ctype, body = show(label, url, headers=headers)
-    if status == 200 and 'json' in ctype.lower():
-        try:
-            data = json.loads(body)
-            print('JSON_TOP_KEYS', list(data)[:50] if isinstance(data, dict) else f'LIST[{len(data)}]')
-            walk(data)
-            return data
-        except Exception as e:
-            print('JSON_PARSE_ERROR', repr(e))
-    return None
-
-
-def contexts(text: str, needle: str, radius=2200, limit=10):
-    low = text.lower(); target = needle.lower(); pos = 0; out = []
-    while len(out) < limit:
-        i = low.find(target, pos)
-        if i < 0:
-            break
-        out.append(re.sub(r'\s+', ' ', text[max(0, i-radius):min(len(text), i+len(needle)+radius)]))
-        pos = i + len(target)
+            collect_targets(v, f'{path}[{i}]', out)
     return out
 
 
 def main():
-    # First use the tenant query parameter visible in the dashboard client.
-    urls = [
-        ('project', add_tenant(f'{API}/projects/by/key/brazil')),
-        ('themes', add_tenant(f'{API}/brazil/themes?page=1&pageSize=1000')),
-        ('subthemes', add_tenant(f'{API}/brazil/subthemes?page=1&pageSize=1000')),
-        ('territory_categories', add_tenant(f'{API}/brazil/territories/categories?page=1&pageSize=1000')),
-        ('territories', add_tenant(f'{API}/brazil/territories?page=1&pageSize=5')),
-    ]
-    responses = {}
-    for label, url in urls:
-        responses[label] = try_json(label, url)
+    project = get_json('project', f'{API}/projects/by/key/brazil')
+    themes = get_json('themes', f'{API}/brazil/themes?page=1&pageSize=1000&expand=true')
+    subthemes = get_json('subthemes', f'{API}/brazil/themes/subthemes?page=1&pageSize=1000')
+    categories = get_json('territory_categories', f'{API}/brazil/territories/categories?page=1&pageSize=1000')
 
-    # If query parameter alone is insufficient, test likely tenant headers read-only.
-    if not any(v is not None for v in responses.values()):
-        print('\n=== TENANT HEADER FALLBACKS ===')
-        for hdr in ('x-tenant-id', 'x-tenant', 'tenant-id', 'tenant', 'cp-tenant', 'x-cp-tenant'):
-            try_json(f'project header {hdr}', f'{API}/projects/by/key/brazil', headers={hdr: TENANT})
+    found = []
+    for label, data in [('project', project), ('themes', themes), ('subthemes', subthemes)]:
+        if data is None:
+            continue
+        for path, item in collect_targets(data):
+            found.append((label, path, item))
 
-    # Inspect exact client contexts for transport and route constructor functions.
-    status, _, final, body, _ = request(HOME)
-    if status != 200:
-        raise SystemExit(f'Platform home returned {status}')
-    html = txt(body)
-    scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
-    bundles = [urllib.parse.urljoin(final, s) for s in scripts if '/assets/index-' in s]
-    if not bundles:
-        raise SystemExit('Main JS bundle not found')
-    _, _, bundle_url, raw, _ = request(bundles[0])
-    js = txt(raw)
-    print('\nBUNDLE', bundle_url, 'BYTES', len(raw))
-    for needle in ['cpTenant', 'tenantId', '/subthemes', '/themes', '/territories', 'statisticsController', 'subtheme_ranking']:
-        hits = contexts(js, needle)
-        print(f'\n--- CONTEXT {needle}: {len(hits)} ---')
-        for i, hit in enumerate(hits, 1):
-            print(f'[{i}] {hit[:6500]}')
+    print('\n=== TARGET SUBTHEMES ===')
+    unique = {}
+    for label, path, item in found:
+        ident = item.get('id') or item.get('key')
+        unique[str(ident)] = item
+        print('\nSOURCE', label, 'PATH', path)
+        print(json.dumps(item, ensure_ascii=False, indent=2)[:50000])
+
+    print('\nTARGET_COUNT', len(unique))
+    if not unique:
+        raise SystemExit('No target atmosphere subthemes found')
+
+    # Fetch each subtheme individually to expose full asset/band/year metadata.
+    for item in unique.values():
+        sid = item.get('id')
+        if sid:
+            full = get_json(f'subtheme_{item.get("key")}', f'{API}/brazil/themes/subthemes/{sid}')
+            if full is not None:
+                print(json.dumps(full, ensure_ascii=False, indent=2)[:50000])
+
+    # Print municipality-related categories so the future extraction can select
+    # exactly the municipal territorial level rather than guessing.
+    if isinstance(categories, dict):
+        cats = categories.get('categories', [])
+        print('\n=== MUNICIPAL CATEGORY CANDIDATES ===')
+        for c in cats:
+            hay = json.dumps(c, ensure_ascii=False).lower()
+            if 'munic' in hay:
+                print(json.dumps(c, ensure_ascii=False, indent=2)[:10000])
 
 
 if __name__ == '__main__':
