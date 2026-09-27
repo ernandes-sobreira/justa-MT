@@ -1,0 +1,19 @@
+name: Probe categoria 192 MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_category_192.py'
+      - '.github/workflows/probe-mapbiomas-category-192.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tea-brasil/scripts/probe_mapbiomas_category_192.py
