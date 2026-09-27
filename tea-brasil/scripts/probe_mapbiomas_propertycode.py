@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Testa propertyCode=IBGE no statistics/subtheme e acompanha a tarefa."""
+"""Testa categoria municipal no statistics/subtheme e acompanha a tarefa."""
 import json,time,urllib.error,urllib.parse,urllib.request
 BASE='https://prd.plataforma.mapbiomas.org/api/v1/brazil'
 HEAD={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json'}
@@ -15,18 +15,21 @@ def get(url):
   return e.code,o
  except Exception as e:return -1,{'error':repr(e)}
 def main():
- for params in [
-  {'propertyCode':'5103403','subthemeKey':KEY,'year':2022,'statMethod':'mean'},
-  {'propertyCode':'5103403','territoryCategoryId':230,'subthemeKey':KEY,'year':2022,'statMethod':'mean'},
- ]:
+ cases=[
+  {'territoryCategoryId':230,'subthemeKey':KEY,'year':2022,'statMethod':'mean'},
+  {'territoryCategoryId':230,'subthemeKey':KEY,'startYear':2022,'endYear':2022,'statMethod':'mean'},
+ ]
+ seen=set()
+ for params in cases:
   url=BASE+'/statistics/subtheme?'+urllib.parse.urlencode(params)
   st,obj=get(url);print('REQUEST',params,'HTTP',st,json.dumps(obj,ensure_ascii=False)[:3000])
   task=obj.get('taskID') if isinstance(obj,dict) else None
-  if not task:continue
-  for n in range(1,9):
+  if not task or task in seen:continue
+  seen.add(task)
+  for n in range(1,13):
    time.sleep(10)
    ts,to=get(f'{BASE}/statistics/task/{task}')
-   print('TASK',n,'HTTP',ts,json.dumps(to,ensure_ascii=False)[:5000])
+   print('TASK',n,'HTTP',ts,json.dumps(to,ensure_ascii=False)[:12000])
    state=str(to.get('status','')).lower() if isinstance(to,dict) else ''
    if state in {'success','completed','failed','aborted','exported'}:break
 if __name__=='__main__':main()
