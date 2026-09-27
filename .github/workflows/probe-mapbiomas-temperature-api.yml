@@ -8,13 +8,17 @@ on:
       - 'tea-brasil/scripts/probe_mapbiomas_statistics_api.py'
       - '.github/workflows/probe-mapbiomas-temperature-api.yml'
 
+concurrency:
+  group: probe-mapbiomas-temperature
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Inspecionar API pública de temperatura MapBiomas
