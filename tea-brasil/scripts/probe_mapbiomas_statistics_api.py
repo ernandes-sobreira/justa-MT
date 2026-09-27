@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Inspect the exact MapBiomas ranking/subtheme parameter builder used by the SPA."""
+"""Locate the exact task/poll endpoint used by the public MapBiomas SPA.
+
+Read-only diagnostic. Prints only short contexts around taskID/task/status routes.
+"""
 from __future__ import annotations
 
 import re
@@ -16,21 +19,19 @@ def get(url: str) -> str:
         return r.read().decode('utf-8', errors='replace')
 
 
-def compact(s: str) -> str:
-    return re.sub(r'\s+', ' ', s).strip()
+def compact(s: str, limit: int = 2200) -> str:
+    return re.sub(r'\s+', ' ', s).strip()[:limit]
 
 
-def dump(js: str, needle: str, radius: int = 5000, limit: int = 12) -> None:
-    pos = 0; hits = 0
-    while hits < limit:
+def contexts(js: str, needle: str, radius: int = 1300, limit: int = 10):
+    pos = 0; out = []
+    while len(out) < limit:
         i = js.find(needle, pos)
         if i < 0:
             break
-        hits += 1
-        print(f'\n--- {needle} HIT {hits} @ {i} ---')
-        print(compact(js[max(0, i-radius):min(len(js), i+len(needle)+radius)]))
+        out.append((i, compact(js[max(0, i-radius):min(len(js), i+len(needle)+radius)])))
         pos = i + len(needle)
-    print(f'\nCOUNT {needle} {hits}')
+    return out
 
 
 def main():
@@ -39,13 +40,28 @@ def main():
     urls = [urllib.parse.urljoin(HOME, s) for s in scripts if '/assets/' in s and s.endswith('.js')]
     for url in urls:
         js = get(url)
-        if 'statistics/ranking/subtheme' not in js:
+        if 'taskID' not in js and 'taskId' not in js:
             continue
         print('BUNDLE', url, 'BYTES', len(js))
-        # Dq is the wrapper that strips `disabled` then calls O$ -> ranking/subtheme.
-        # Its downstream callers expose the exact query object used by the ranking chart.
-        for needle in ('Dq(', 'subtheme_ranking', 'territoryCategoryId', 'pageSize', 'sortDirection', 'rankingData'):
-            dump(js, needle)
+        # Exact async concepts and likely task-result routes.
+        for needle in ('taskID', 'taskId', '/tasks', '/task', 'task/status', 'taskStatus', 'statistics/ranking/subtheme'):
+            hits = contexts(js, needle)
+            print(f'\n### {needle} {len(hits)}')
+            for idx, text in hits:
+                print('AT', idx, text)
+
+        # Endpoint-like quoted literals containing task/job/status/result.
+        found = set()
+        for q in ('`', '"', "'"):
+            pat = re.escape(q) + r'([^' + re.escape(q) + r'\n\r]{1,500})' + re.escape(q)
+            for m in re.finditer(pat, js):
+                s = m.group(1)
+                low = s.lower()
+                if '/' in s and any(k in low for k in ('task', 'job', 'status', 'result')):
+                    found.add(compact(s, 500))
+        print('\n### ROUTE_LITERALS', len(found))
+        for s in sorted(found)[:120]:
+            print('ROUTE', s)
 
 
 if __name__ == '__main__':
