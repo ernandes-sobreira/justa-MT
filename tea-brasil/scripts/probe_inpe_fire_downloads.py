@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe official INPE Programa Queimadas open-data page to locate annual CSV endpoints.
+"""Probe official INPE Programa Queimadas open-data endpoints.
 Read-only diagnostic used before implementing the TEA-Brasil fire pipeline.
 """
 from __future__ import annotations
@@ -10,6 +10,7 @@ import urllib.parse
 import urllib.request
 
 PAGE = "https://terrabrasilis.dpi.inpe.br/queimadas/portal/pages/secao_downloads/dados-abertos/"
+ANNUAL = "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/"
 UA = {"User-Agent": "TEA-Brasil/1.0 (+https://ernandes-sobreira.github.io/justa-MT/tea-brasil/)"}
 
 
@@ -36,6 +37,11 @@ def interesting(text: str) -> bool:
     return any(k in t for k in ("csv", "foco", "anual", "dados_abertos", "download"))
 
 
+def parse_links(text: str, base: str) -> list[tuple[str, str]]:
+    p = Links(); p.feed(text)
+    return [(kind, urllib.parse.urljoin(base, url)) for kind, url in p.urls]
+
+
 def main():
     raw, ctype, final = get(PAGE)
     text = raw.decode("utf-8", errors="replace")
@@ -47,15 +53,25 @@ def main():
             clean = re.sub(r"\s+", " ", line).strip()
             print(clean[:1500])
 
-    p = Links()
-    p.feed(text)
-    resolved: list[tuple[str, str]] = []
+    resolved = parse_links(text, final)
     print("\n=== LINKS/SCRIPTS RELEVANTES ===")
-    for kind, url in p.urls:
-        full = urllib.parse.urljoin(final, url)
-        resolved.append((kind, full))
+    for kind, full in resolved:
         if interesting(full):
             print(kind, full)
+
+    print("\n=== DIRETÓRIO ANUAL OFICIAL ===")
+    raw_a, ctype_a, final_a = get(ANNUAL)
+    text_a = raw_a.decode("utf-8", errors="replace")
+    print("ANNUAL", final_a, ctype_a, len(raw_a))
+    annual_links = parse_links(text_a, final_a)
+    csvs = []
+    for kind, full in annual_links:
+        name = urllib.parse.unquote(full.rsplit('/', 1)[-1])
+        if name.lower().endswith((".csv", ".zip", ".gz")) or "2022" in name:
+            csvs.append(full)
+            print(kind, full)
+    print("TOTAL_CANDIDATOS", len(csvs))
+    print("CANDIDATOS_2022", [u for u in csvs if "2022" in u])
 
     print("\n=== INSPEÇÃO DE JAVASCRIPT ===")
     seen = set()
