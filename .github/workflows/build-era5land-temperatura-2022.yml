@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
 
+# Pipeline canônico: 5.570 municípios do Censo 2022 ou não publica.
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,8 +35,10 @@ jobs:
           m=json.loads(meta.read_text(encoding='utf-8'))
           assert len(df)==5570, len(df)
           assert df.codigo_ibge.nunique()==5570, df.codigo_ibge.nunique()
+          assert 'percentual_tea_2022' in df.columns
           assert m['status']=='validado_para_integracao'
           assert m['universo']['linhas']==5570 and m['universo']['codigos_unicos']==5570
+          assert m['tea_join']['codigos_unicos']==5570
           for c in ['temperatura_media_ar_c_2022','temperatura_maxima_ar_c_2022','temperatura_minima_ar_c_2022']:
               assert m['cobertura'][c]['validos'] + m['cobertura'][c]['na'] == 5570
           print('VALIDACAO_FINAL_OK', len(df), df.codigo_ibge.nunique(), m['cobertura'])
