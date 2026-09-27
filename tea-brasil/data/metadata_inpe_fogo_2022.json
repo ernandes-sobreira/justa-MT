@@ -1,0 +1,150 @@
+{
+  "generated_at_utc": "2026-09-27T11:13:16.462809+00:00",
+  "source": "Programa Queimadas / INPE",
+  "indicator": "Focos de fogo ativo — satélite de referência",
+  "reference_year": 2022,
+  "history_window": "2018-2022",
+  "territorial_unit": "município",
+  "join_key": "codigo_ibge (7 dígitos, Censo 2022)",
+  "expected_municipalities": 5570,
+  "municipalities_in_file": 5570,
+  "unique_codes": 5570,
+  "valid_fire_count_cells_2022": 5570,
+  "valid_area_cells_2022": 5570,
+  "valid_density_cells_2022": 5570,
+  "missing_fire_cells_2022": 0,
+  "total_reference_hotspots_2022": 200763,
+  "municipalities_with_zero_reference_hotspots_2022": 1532,
+  "municipalities_with_reference_hotspots_2022": 4038,
+  "inpe_source_directory": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/",
+  "inpe_download_page": "https://terrabrasilis.dpi.inpe.br/queimadas/portal/pages/secao_downloads/dados-abertos/",
+  "inpe_methodology_faq": "https://terrabrasilis.dpi.inpe.br/queimadas/portal/pages/secao_informacoes/faq/",
+  "inpe_files": [
+    {
+      "year": 2018,
+      "url": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/focos_br_ref_2018.zip",
+      "zip_bytes": 5278250,
+      "csv_member": "focos_br_ref_2018.csv",
+      "rows": 132870,
+      "unique_foco_ids": 132870,
+      "municipalities_with_focus": 4063,
+      "min_data_pas": "2018-01-01 16:10:00",
+      "max_data_pas": "2018-12-31 16:40:00"
+    },
+    {
+      "year": 2019,
+      "url": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/focos_br_ref_2019.zip",
+      "zip_bytes": 7766490,
+      "csv_member": "focos_br_ref_2019.csv",
+      "rows": 197632,
+      "unique_foco_ids": 197632,
+      "municipalities_with_focus": 4417,
+      "min_data_pas": "2019-01-01 15:40:00",
+      "max_data_pas": "2019-12-31 17:50:00"
+    },
+    {
+      "year": 2020,
+      "url": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/focos_br_ref_2020.zip",
+      "zip_bytes": 8786351,
+      "csv_member": "focos_br_ref_2020.csv",
+      "rows": 222797,
+      "unique_foco_ids": 222797,
+      "municipalities_with_focus": 4447,
+      "min_data_pas": "2020-01-01 16:45:00",
+      "max_data_pas": "2020-12-31 18:00:00"
+    },
+    {
+      "year": 2021,
+      "url": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/focos_br_ref_2021.zip",
+      "zip_bytes": 7623094,
+      "csv_member": "focos_br_ref_2021.csv",
+      "rows": 184081,
+      "unique_foco_ids": 184081,
+      "municipalities_with_focus": 4503,
+      "min_data_pas": "2021-01-01 15:25:00",
+      "max_data_pas": "2021-12-31 17:34:00"
+    },
+    {
+      "year": 2022,
+      "url": "https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/anual/Brasil_sat_ref/focos_br_ref_2022.zip",
+      "zip_bytes": 8256945,
+      "csv_member": "focos_br_ref_2022.csv",
+      "rows": 200763,
+      "unique_foco_ids": 200763,
+      "municipalities_with_focus": 4038,
+      "min_data_pas": "2022-01-01 16:32:00",
+      "max_data_pas": "2022-12-31 17:30:00"
+    }
+  ],
+  "ibge_area_source": "https://geoftp.ibge.gov.br/organizacao_do_territorio/estrutura_territorial/areas_territoriais/2022/AR_BR_RG_UF_RGINT_MES_MIC_MUN_2022.xls",
+  "ibge_area_sheet": "AR_BR_MUN_2022",
+  "ibge_area_field": "AR_MUN_2022",
+  "ibge_non_municipal_rows_ignored": [
+    "4300001",
+    "4300002"
+  ],
+  "name_aliases_used": [
+    {
+      "uf": "MG",
+      "inpe_normalized": "DONA EUSEBIA",
+      "censo_normalized": "DONA EUZEBIA"
+    },
+    {
+      "uf": "MG",
+      "inpe_normalized": "SAO THOME DAS LETRAS",
+      "censo_normalized": "SAO TOME DAS LETRAS"
+    },
+    {
+      "uf": "MT",
+      "inpe_normalized": "SANTO ANTONIO DO LEVERGER",
+      "censo_normalized": "SANTO ANTONIO DE LEVERGER"
+    },
+    {
+      "uf": "RN",
+      "inpe_normalized": "ACU",
+      "censo_normalized": "ASSU"
+    },
+    {
+      "uf": "RN",
+      "inpe_normalized": "ARES",
+      "censo_normalized": "AREZ"
+    },
+    {
+      "uf": "RN",
+      "inpe_normalized": "AUGUSTO SEVERO",
+      "censo_normalized": "CAMPO GRANDE"
+    },
+    {
+      "uf": "RR",
+      "inpe_normalized": "SAO LUIZ",
+      "censo_normalized": "SAO LUIZ DO ANAUA"
+    },
+    {
+      "uf": "SE",
+      "inpe_normalized": "GRACHO CARDOSO",
+      "censo_normalized": "GRACCHO CARDOSO"
+    },
+    {
+      "uf": "TO",
+      "inpe_normalized": "FORTALEZA DO TABOCAO",
+      "censo_normalized": "TABOCAO"
+    }
+  ],
+  "definitions": {
+    "focos_inpe_ref_2022": "Contagem de registros de focos de fogo ativo no arquivo anual Brasil_sat_ref do INPE em 2022.",
+    "focos_por_100_km2_2022": "focos_inpe_ref_2022 / área territorial municipal oficial IBGE 2022 em km² × 100.",
+    "anos_com_foco_ref_2018_2022": "Número de anos de 2018 a 2022 com pelo menos um foco do satélite de referência.",
+    "focos_inpe_ref_total_2018_2022": "Soma das detecções do satélite de referência de 2018 a 2022."
+  },
+  "zero_rule": "Zero só é atribuído após download, parse e mapeamento completos do arquivo oficial. Município sem registro no arquivo anual completo recebe zero; erro técnico faz o build falhar.",
+  "interpretation": "Foco é detecção orbital de fogo ativo; não equivale diretamente a uma queimada individual nem à área queimada. Indicadores são ecológicos municipais, não exposição individual.",
+  "rules": [
+    "Exatamente 5.570 códigos municipais únicos do Censo 2022.",
+    "Nenhuma linha INPE é descartada silenciosamente.",
+    "Área usa IBGE 2022; Lagoa Mirim e Lagoa dos Patos são linhas não municipais e são explicitamente ignoradas.",
+    "Aliases históricos de nomes são explícitos e documentados.",
+    "A soma municipal de 2022 deve ser idêntica ao número de linhas do arquivo anual INPE 2022.",
+    "Ausência técnica nunca vira zero.",
+    "Sem inferência causal individual."
+  ]
+}
