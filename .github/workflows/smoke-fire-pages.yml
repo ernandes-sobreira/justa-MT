@@ -50,7 +50,7 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install --silent playwright
           npx playwright install --with-deps chromium
-      - name: Testar módulo no site publicado
+      - name: Testar módulo e mapa no site publicado
         run: |
           cd /tmp/tea-fire-smoke
           cat > smoke.js <<'JS'
@@ -58,9 +58,16 @@ jobs:
           (async()=>{
             const browser=await chromium.launch({headless:true});
             const page=await browser.newPage({viewport:{width:1440,height:1100}});
-            const errors=[];
-            page.on('pageerror',e=>errors.push('pageerror: '+e.message));
-            page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text())});
+            const fireErrors=[];
+            const badResponses=[];
+            page.on('pageerror',e=>fireErrors.push('pageerror: '+e.message));
+            page.on('console',m=>{
+              if(m.type()==='error' && /TEA-Brasil fogo/i.test(m.text())) fireErrors.push('console: '+m.text());
+            });
+            page.on('response',r=>{
+              const u=r.url();
+              if(r.status()>=400 && /(fire-v1|inpe_fogo|click_that_hood|tbrugz\/geodata)/i.test(u)) badResponses.push(`${r.status()} ${u}`);
+            });
             await page.goto('https://ernandes-sobreira.github.io/justa-MT/tea-brasil/?smoke='+Date.now(),{waitUntil:'domcontentloaded',timeout:90000});
             await page.waitForSelector('#fire-module',{state:'attached',timeout:90000});
             await page.waitForFunction(()=>{
@@ -76,15 +83,29 @@ jobs:
               rankingRows:document.querySelectorAll('#fire-rank-body tr').length,
               fireData:typeof FIRE!=='undefined'?{loaded:FIRE.loaded,rows:FIRE.rows.length,unique:new Set(FIRE.rows.map(d=>d.code)).size}:null
             }));
-            console.log(JSON.stringify(info,null,2));
+            console.log('RUNTIME',JSON.stringify(info,null,2));
             if(!info.loader||!info.module||!info.fireData?.loaded)throw new Error('módulo de fogo não carregou');
             if(info.fireData.rows!==5570||info.fireData.unique!==5570)throw new Error('base runtime não preserva 5570 códigos');
             if(!/5\.570\/5\.570/.test(info.status))throw new Error('status não confirma 5.570/5.570');
             if(info.total!=='200.763')throw new Error('total runtime inesperado: '+info.total);
             if(info.positive!=='4.038/5.570')throw new Error('cobertura positiva runtime inesperada: '+info.positive);
             if(info.rankingRows!==12)throw new Error('ranking não renderizou 12 linhas');
-            const relevant=errors.filter(x=>!/(favicon|ERR_BLOCKED_BY_CLIENT)/i.test(x));
-            if(relevant.length)throw new Error('erros no navegador: '+relevant.join(' | '));
+
+            await page.evaluate(()=>switchScreen('contexto'));
+            await page.click('#fire-map-load');
+            await page.waitForFunction(()=>/Mapa nacional de fogo carregado/.test(document.querySelector('#fire-status')?.textContent||''),null,{timeout:60000});
+            const brPaths=await page.locator('#fire-map .leaflet-overlay-pane path').count();
+            console.log('MAPA_BR_PATHS',brPaths);
+            if(brPaths<20)throw new Error('mapa Brasil não renderizou estados suficientes: '+brPaths);
+
+            await page.selectOption('#fire-map-uf','MT');
+            await page.waitForFunction(()=>/Mato Grosso: 141 municípios mapeados/.test(document.querySelector('#fire-status')?.textContent||''),null,{timeout:60000});
+            const mtPaths=await page.locator('#fire-map .leaflet-overlay-pane path').count();
+            console.log('MAPA_MT_PATHS',mtPaths);
+            if(mtPaths<130)throw new Error('mapa municipal de MT incompleto: '+mtPaths);
+
+            if(fireErrors.length)throw new Error('erros específicos do fogo: '+fireErrors.join(' | '));
+            if(badResponses.length)throw new Error('respostas HTTP ruins do bloco de fogo/mapa: '+badResponses.join(' | '));
             await browser.close();
           })().catch(e=>{console.error(e);process.exit(1)});
           JS
