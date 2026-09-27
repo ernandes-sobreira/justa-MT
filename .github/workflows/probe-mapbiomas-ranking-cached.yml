@@ -1,0 +1,20 @@
+name: Probe ranking municipal cacheado MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_ranking_cached.py'
+      - '.github/workflows/probe-mapbiomas-ranking-cached.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar ranking cacheado 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_ranking_cached.py
