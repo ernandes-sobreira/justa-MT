@@ -1,10 +1,6 @@
-name: Enriquecer temperatura com TEA
+name: Enriquecer temperatura com TEA (fallback manual)
 
 on:
-  push:
-    paths:
-      - 'tea-brasil/data/era5land_temperatura_2022.csv'
-      - 'tea-brasil/data/metadata_era5land_temperatura_2022.json'
   workflow_dispatch:
 
 permissions:
@@ -22,7 +18,7 @@ jobs:
       - name: Validar e publicar
         run: |
           python - <<'PY'
-          import json,pandas as pd
+          import pandas as pd
           p='tea-brasil/data/era5land_temperatura_2022.csv'
           d=pd.read_csv(p,dtype={'codigo_ibge':'string'},encoding='utf-8-sig',na_values=['NA'])
           assert len(d)==5570 and d.codigo_ibge.nunique()==5570
@@ -36,5 +32,6 @@ jobs:
             echo 'Sem alteracoes para publicar.'
           else
             git commit -m 'Junta percentual TEA a temperatura ERA5-Land 2022'
-            git push
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
