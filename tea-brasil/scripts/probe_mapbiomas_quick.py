@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Probe rápido: uma chamada municipal 2022 para destravar o pipeline nacional.
 import json, urllib.parse, urllib.request, urllib.error
 
 BASE='https://prd.plataforma.mapbiomas.org/api/v1/brazil'
