@@ -1,0 +1,20 @@
+name: Probe status export MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_export_status.py'
+      - '.github/workflows/probe-mapbiomas-export-status.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descobrir consulta de status do export
+        run: python tea-brasil/scripts/probe_mapbiomas_export_status.py
