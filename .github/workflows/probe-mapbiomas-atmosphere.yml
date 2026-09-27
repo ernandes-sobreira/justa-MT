@@ -1,0 +1,20 @@
+name: Probe MapBiomas Atmosfera
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_atmosphere.py'
+      - '.github/workflows/probe-mapbiomas-atmosphere.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testar acessos públicos de temperatura
+        run: python tea-brasil/scripts/probe_mapbiomas_atmosphere.py
