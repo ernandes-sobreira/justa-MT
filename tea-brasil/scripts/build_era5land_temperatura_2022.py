@@ -131,6 +131,7 @@ def ibge_points(master: pd.DataFrame) -> pd.DataFrame:
 def api_request(batch: pd.DataFrame, attempt_limit: int = 6):
     lats = ",".join(f"{v:.6f}" for v in batch["latitude_representativa"])
     lons = ",".join(f"{v:.6f}" for v in batch["longitude_representativa"])
+    elevations = ",".join("nan" for _ in range(len(batch)))
     params = {
         "latitude": lats,
         "longitude": lons,
@@ -138,7 +139,7 @@ def api_request(batch: pd.DataFrame, attempt_limit: int = 6):
         "end_date": END_DATE,
         "daily": ",".join(DAILY_VARS),
         "models": "era5_land",
-        "elevation": "nan",
+        "elevation": elevations,
         "cell_selection": "nearest",
         "timezone": "GMT",
         "temperature_unit": "celsius",
