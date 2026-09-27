@@ -1,0 +1,20 @@
+name: Probe API temperatura MapBiomas
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_temperature_api.py'
+      - '.github/workflows/probe-mapbiomas-temperature-api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspecionar API pública de temperatura MapBiomas
+        run: python tea-brasil/scripts/probe_mapbiomas_temperature_api.py
