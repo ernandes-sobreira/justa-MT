@@ -22,7 +22,7 @@ jobs:
           base='https://ernandes-sobreira.github.io/justa-MT/tea-brasil/'
           wanted={
             'social-v1.js': "fire-v1.js",
-            'fire-v1.js': "id=\"fire-module\"",
+            'fire-v1.js': "box.id='fire-module'",
             'data/metadata_inpe_fogo_2022.json': '"municipalities_in_file": 5570',
           }
           for path,needle in wanted.items():
