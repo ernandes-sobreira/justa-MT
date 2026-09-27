@@ -1,0 +1,20 @@
+name: Comparar malha MapBiomas e Censo 2022
+
+on:
+  push:
+    paths:
+      - '.github/workflows/compare-mapbiomas-ibge2022-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install --disable-pip-version-check --quiet pyshp
+      - name: Comparar universos municipais
+        run: python tea-brasil/scripts/compare_mapbiomas_2025_ibge2022.py
