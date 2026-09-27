@@ -1,0 +1,33 @@
+name: Ajustar interface temperatura ERA5-Land
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/patch_temperature_era5_ui.py'
+      - '.github/workflows/patch-temperature-era5-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar patch seguro
+        run: python tea-brasil/scripts/patch_temperature_era5_ui.py
+      - name: Verificar sintaxe JavaScript
+        run: node --check tea-brasil/temperature-v1.js
+      - name: Publicar interface preparada sem ativar loader
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tea-brasil/temperature-v1.js
+          if git diff --cached --quiet; then
+            echo 'Sem alteracoes para publicar.'
+          else
+            git commit -m 'Adapta interface de temperatura para ERA5-Land'
+            git push
+          fi
