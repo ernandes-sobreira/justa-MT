@@ -1,0 +1,20 @@
+name: Probe rápido MapBiomas temperatura
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_quick.py'
+      - '.github/workflows/probe-mapbiomas-quick.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consulta única temperatura média 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_quick.py
