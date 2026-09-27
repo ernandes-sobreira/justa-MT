@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Discover concise read-only statistics routes used by the public MapBiomas SPA.
-
-This probe intentionally prints only endpoint-like literals and short contexts.
-It writes no project data and exists only to identify the exact public API call
-needed for reproducible municipal temperature statistics in TEA-Brasil.
-"""
+"""Discover concise read-only statistics routes and query construction in MapBiomas SPA."""
 from __future__ import annotations
 
 import re
@@ -13,10 +8,7 @@ import urllib.request
 
 HOME = 'https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 HEADERS = {'User-Agent': 'TEA-Brasil/1.0'}
-KEYWORDS = (
-    'statistics', 'statistic', 'ranking', 'territor', 'subtheme',
-    'historical', 'summary', 'native_grid'
-)
+KEYWORDS = ('statistics','statistic','ranking','territor','subtheme','historical','summary','native_grid')
 
 
 def get(url: str) -> str:
@@ -25,49 +17,29 @@ def get(url: str) -> str:
         return r.read().decode('utf-8', errors='replace')
 
 
-def compact(value: str, limit: int = 900) -> str:
-    value = re.sub(r'\s+', ' ', value).strip()
-    return value[:limit]
+def compact(value: str, limit: int = 1600) -> str:
+    return re.sub(r'\s+', ' ', value).strip()[:limit]
 
 
-def short_contexts(text: str, needle: str, radius: int = 550, limit: int = 6):
-    low = text.lower(); target = needle.lower(); pos = 0; out = []
+def contexts(text: str, needle: str, radius: int = 1100, limit: int = 12):
+    pos = 0; out = []
     while len(out) < limit:
-        idx = low.find(target, pos)
+        idx = text.find(needle, pos)
         if idx < 0:
             break
-        out.append(compact(text[max(0, idx-radius):min(len(text), idx+len(needle)+radius)], 1300))
-        pos = idx + len(target)
+        out.append(compact(text[max(0, idx-radius):min(len(text), idx+len(needle)+radius)]))
+        pos = idx + len(needle)
     return out
 
 
 def quoted_endpoint_literals(js: str):
-    """Return unique short quoted/template literals related to target API concepts."""
     found = set()
-    # Minified SPA uses ordinary strings and template literals. Keep only short,
-    # endpoint-like values so logs remain human-auditable.
     for quote in ('`', '"', "'"):
         pattern = re.escape(quote) + r'([^' + re.escape(quote) + r'\n\r]{1,700})' + re.escape(quote)
         for match in re.finditer(pattern, js):
-            value = match.group(1)
-            low = value.lower()
+            value = match.group(1); low = value.lower()
             if any(k in low for k in KEYWORDS) and ('/' in value or 'api' in low):
                 found.add(compact(value, 700))
-    return sorted(found)
-
-
-def call_contexts(js: str):
-    """Find compact get/post/fetch/url call fragments near statistics concepts."""
-    found = set()
-    patterns = [
-        r'(?:url\s*:\s*|\.get\(|\.post\(|fetch\()(.{0,900}?(?:statistics|statistic|ranking|territor|subtheme).{0,900}?)(?=\}\)|\)\}|;|,headers:|,params:)',
-        r'((?:statistics|ranking|territories|subthemes)[A-Za-z0-9_$]*\s*[:=]\s*.{0,1100})',
-    ]
-    for pat in patterns:
-        for m in re.finditer(pat, js, re.I):
-            found.add(compact(m.group(0), 1500))
-            if len(found) >= 60:
-                return sorted(found)
     return sorted(found)
 
 
@@ -76,33 +48,36 @@ def main():
     scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
     urls = [urllib.parse.urljoin(HOME, s) for s in scripts if '/assets/' in s and s.endswith('.js')]
     print('JS_FILES', len(urls))
-
     for url in urls:
         js = get(url)
-        if not any(x in js for x in ('subtheme_ranking', 'subtheme_historical', 'subtheme_summary', 'native_grid_statistics')):
+        if 'statistics/ranking/subtheme' not in js:
             continue
-
         print('\n### BUNDLE', url, 'BYTES', len(js))
-
         literals = quoted_endpoint_literals(js)
-        print('ENDPOINT_LITERALS', len(literals))
-        for value in literals[:120]:
-            print('LITERAL', value)
+        for value in literals:
+            if 'statistics/' in value:
+                print('ENDPOINT', value)
 
-        calls = call_contexts(js)
-        print('\nCALL_FRAGMENTS', len(calls))
-        for value in calls[:60]:
-            print('CALL', value)
+        # Minified names around the generated API hooks discovered in the previous probe.
+        for needle in ('P$(', 'O$(', 'R$(', 'A$(', 'z$(', 'N$(', 'subtheme_ranking'):
+            hits = contexts(js, needle)
+            print(f'\n### USAGE {needle} {len(hits)}')
+            for i, hit in enumerate(hits, 1):
+                print(f'{needle}[{i}]', hit)
 
-        # A few surgical contexts around the exact concepts we need. No huge dump.
-        for needle in (
-            'subtheme_ranking', 'native_grid_statistics', 'territoryIds',
-            'territory_ids', 'subthemeId', 'subtheme_id', 'statistics'
-        ):
-            hits = short_contexts(js, needle)
-            print(f'\nCONTEXT {needle} {len(hits)}')
-            for i, value in enumerate(hits, 1):
-                print(f'{needle}[{i}]', value)
+        # Print object fragments that visibly construct params with the fields relevant
+        # to subtheme stats/ranking.
+        field_re = re.compile(r'.{0,900}(?:categoryId|territoryId|subthemeKey|subthemeId|year|band|pageSize).{0,1400}', re.I)
+        snippets = []
+        for m in field_re.finditer(js):
+            s = compact(m.group(0), 2200)
+            if ('ranking' in s.lower() or 'subtheme' in s.lower()) and s not in snippets:
+                snippets.append(s)
+            if len(snippets) >= 50:
+                break
+        print('\n### PARAMETER_OBJECT_CONTEXTS', len(snippets))
+        for i, s in enumerate(snippets, 1):
+            print(f'PARAM[{i}]', s)
 
 
 if __name__ == '__main__':
