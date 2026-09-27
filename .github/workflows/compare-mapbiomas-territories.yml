@@ -1,0 +1,22 @@
+name: Compara municipios MapBiomas 2025 x Censo 2022
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/compare_mapbiomas_2025_ibge2022.py'
+      - '.github/workflows/compare-mapbiomas-territories.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar pyshp
+        run: python -m pip install --quiet pyshp
+      - name: Comparar universos territoriais
+        run: python tea-brasil/scripts/compare_mapbiomas_2025_ibge2022.py
