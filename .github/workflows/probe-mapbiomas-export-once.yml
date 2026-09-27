@@ -1,0 +1,20 @@
+name: Probe isolado exportacao MapBiomas
+
+on:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_mapbiomas_download_api.py'
+      - '.github/workflows/probe-mapbiomas-export-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exportprobe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descobrir contrato de exportacao
+        run: python tea-brasil/scripts/probe_mapbiomas_download_api.py
