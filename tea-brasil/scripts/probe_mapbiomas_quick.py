@@ -1,73 +1,69 @@
 #!/usr/bin/env python3
-"""Testa diretamente /statistics/subtheme para Cuiabá em 2022."""
-import json, time, urllib.parse, urllib.request, urllib.error
+"""Probe rápido do exportador raster da plataforma MapBiomas."""
+import json,re,urllib.parse,urllib.request,urllib.error
 
+HOME='https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 API='https://prd.plataforma.mapbiomas.org/api/v1/brazil'
-HEADERS={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json'}
-CUIABA='851fdd17-0e9e-4bdf-8a5c-af3f84a887de'
-SUBTHEMES={
- 'mean':'atmosphere_annual_mean_air_temperature',
- 'max':'atmosphere_annual_maximum_air_temperature',
- 'min':'atmosphere_annual_minimum_air_temperature',
-}
+WEB={'User-Agent':'TEA-Brasil/1.0'}
+HEADERS={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json','Content-Type':'application/json'}
 
-def get(path, params=None, timeout=40):
+def read(url, headers=WEB, timeout=60):
+    req=urllib.request.Request(url,headers=headers,method='GET')
+    with urllib.request.urlopen(req,timeout=timeout) as r:return r.status,r.read().decode('utf-8','replace')
+
+def api_get(path,params=None):
     url=API+path
-    if params:
-        url += '?' + urllib.parse.urlencode(params, doseq=True)
-    req=urllib.request.Request(url,headers=HEADERS,method='GET')
+    if params:url+='?'+urllib.parse.urlencode(params,doseq=True)
     try:
-        with urllib.request.urlopen(req,timeout=timeout) as r:
-            raw=r.read().decode('utf-8','replace')
-            try: obj=json.loads(raw)
-            except Exception: obj={'raw':raw[:30000]}
-            return r.status,url,obj
+        st,raw=read(url,HEADERS,30)
+        try:o=json.loads(raw)
+        except:o={'raw':raw[:30000]}
+        return st,url,o
     except urllib.error.HTTPError as e:
         raw=e.read().decode('utf-8','replace')
-        try: obj=json.loads(raw)
-        except Exception: obj={'raw':raw[:30000]}
-        return e.code,url,obj
-    except Exception as e:
-        return -1,url,{'error':repr(e)}
+        try:o=json.loads(raw)
+        except:o={'raw':raw[:30000]}
+        return e.code,url,o
+    except Exception as e:return -1,url,{'error':repr(e)}
+
+def api_post(path,payload):
+    url=API+path
+    data=json.dumps(payload).encode()
+    req=urllib.request.Request(url,data=data,headers=HEADERS,method='POST')
+    try:
+        with urllib.request.urlopen(req,timeout=40) as r:
+            raw=r.read().decode('utf-8','replace'); st=r.status
+    except urllib.error.HTTPError as e:
+        st=e.code;raw=e.read().decode('utf-8','replace')
+    except Exception as e:return -1,url,{'error':repr(e)}
+    try:o=json.loads(raw)
+    except:o={'raw':raw[:30000]}
+    return st,url,o
 
 def show(label,res):
-    status,url,obj=res
-    print('\n===',label,'===')
-    print('STATUS',status)
-    print('URL',url)
-    print('BODY',json.dumps(obj,ensure_ascii=False,indent=2)[:50000])
-    return obj
+    st,url,obj=res;print('\n===',label,'===\nSTATUS',st,'\nURL',url,'\nBODY',json.dumps(obj,ensure_ascii=False,indent=2)[:50000])
 
-def poll_task(obj):
-    if not isinstance(obj,dict): return
-    tid=obj.get('taskID') or obj.get('taskId')
-    if not tid: return
-    for i in range(12):
-        time.sleep(3)
-        st,url,task=get('/statistics/task/'+str(tid),timeout=20)
-        print('TASK_POLL',i+1,'STATUS',st,'URL',url,'BODY',json.dumps(task,ensure_ascii=False)[:12000])
-        state=str(task.get('status','')).lower() if isinstance(task,dict) else ''
-        if state in {'success','exported','failed','aborted','completed'}: break
+# Hierarquia de territórios num ponto do Brasil, para achar território nacional.
+show('POINT_BRASILIA',api_get('/territories/point',{'latitude':-15.793889,'longitude':-47.882778}))
+show('GROUPS',api_get('/territories/groups'))
 
-# Parâmetro exatamente como o ranking da SPA sugere: território único em scalar.
-base={
- 'territoryCategoryId':230,
- 'territoryId':CUIABA,
- 'year':2022,
- 'statMethod':'mean',
- 'filters':'{}',
-}
-for label,key in SUBTHEMES.items():
-    params={**base,'subthemeKey':key}
-    obj=show(label+'_scalar',get('/statistics/subtheme',params))
-    poll_task(obj)
+# Erro de validação costuma revelar campos obrigatórios do payload.
+show('EXPORT_EMPTY',api_post('/maps/export',{}))
 
-# Variações mínimas apenas para resolver serialização, caso scalar não seja aceito.
-variants=[
- ('year_array', {'territoryCategoryId':230,'territoryId':CUIABA,'year':[2022],'statMethod':'mean','filters':'{}','subthemeKey':SUBTHEMES['mean']}),
- ('territory_repeated', [('territoryCategoryId',230),('territoryId',CUIABA),('year',2022),('statMethod','mean'),('filters','{}'),('subthemeKey',SUBTHEMES['mean'])]),
- ('no_filters', {'territoryCategoryId':230,'territoryId':CUIABA,'year':2022,'statMethod':'mean','subthemeKey':SUBTHEMES['mean']}),
-]
-for name,params in variants:
-    obj=show(name,get('/statistics/subtheme',params))
-    poll_task(obj)
+# Contrato exato usado pelo SPA.
+_,html=read(HOME)
+scripts=re.findall(r'<script[^>]+src=["\']([^"\']+)',html,re.I)
+for src in scripts:
+    if '/assets/' not in src or not src.endswith('.js'):continue
+    url=urllib.parse.urljoin(HOME,src)
+    _,js=read(url,WEB,90)
+    if '/maps/export' not in js:continue
+    print('\nBUNDLE',url,'BYTES',len(js))
+    for needle in ['/maps/export','maps/export','Dk=','Dk(','exportFormat','fileName','subthemeKey','territoryId','mapExport']:
+        pos=0;n=0
+        while n<12:
+            i=js.find(needle,pos)
+            if i<0:break
+            ctx=re.sub(r'\s+',' ',js[max(0,i-4500):min(len(js),i+len(needle)+7500)])
+            print('\nCONTEXT',needle,'AT',i,'\n',ctx)
+            pos=i+len(needle);n+=1
