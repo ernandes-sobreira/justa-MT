@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only probe for MapBiomas ranking/subtheme validation and 2022 temperature.
-
-The API itself is allowed to reveal required query fields through validation
-errors; no parameter names are guessed silently and no TEA-Brasil data are written.
-"""
+"""Read-only probe for MapBiomas 2022 municipal temperature ranking."""
 from __future__ import annotations
 
 import json
@@ -19,12 +15,11 @@ HEADERS = {
 }
 MEAN_KEY = 'atmosphere_annual_mean_air_temperature'
 MAX_KEY = 'atmosphere_annual_maximum_air_temperature'
-MUNICIPAL_CATEGORY_ID = '230'
+MUNICIPAL_CATEGORY_ID = 230
 
 
 def request(params: dict[str, object]):
-    qs = urllib.parse.urlencode(params, doseq=True)
-    url = API + ('?' + qs if qs else '')
+    url = API + '?' + urllib.parse.urlencode(params, doseq=True)
     req = urllib.request.Request(url, headers=HEADERS, method='GET')
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
@@ -35,35 +30,44 @@ def request(params: dict[str, object]):
         return -1, url, repr(e)
 
 
-def show(label: str, params: dict[str, object]):
+def summarize(label: str, params: dict[str, object]):
     status, url, body = request(params)
     print('\n===', label, '===')
     print('STATUS', status)
     print('URL', url)
     try:
         obj = json.loads(body)
-        print(json.dumps(obj, ensure_ascii=False, indent=2)[:30000])
     except Exception:
-        print(body[:30000])
-    return status, body
+        print(body[:30000]); return
+    if status != 200:
+        print(json.dumps(obj, ensure_ascii=False, indent=2)[:30000]); return
+    print('TYPE', type(obj).__name__)
+    if isinstance(obj, dict):
+        print('KEYS', list(obj.keys()))
+        for k, v in obj.items():
+            if isinstance(v, list):
+                print('LIST', k, 'LEN', len(v))
+                print(json.dumps(v[:3], ensure_ascii=False, indent=2)[:12000])
+            elif isinstance(v, (int, float, str, bool)) or v is None:
+                print(k, v)
+            else:
+                print(k, type(v).__name__, json.dumps(v, ensure_ascii=False)[:3000])
+    elif isinstance(obj, list):
+        print('LEN', len(obj))
+        print(json.dumps(obj[:3], ensure_ascii=False, indent=2)[:12000])
 
 
 def main():
-    # First request deliberately empty: backend validation is authoritative.
-    show('empty', {})
-
-    # Then test the smallest scientifically plausible parameter sets, preserving
-    # the current official municipal category only as a diagnostic. If the API
-    # ranks 2025 municipality geometry, we will NOT use it as the 2022 base.
-    candidates = [
-        {'subthemeKey': MEAN_KEY},
-        {'subthemeKey': MEAN_KEY, 'year': 2022},
-        {'subthemeKey': MEAN_KEY, 'year': 2022, 'territoryCategoryId': MUNICIPAL_CATEGORY_ID},
-        {'subthemeKey': MEAN_KEY, 'year': 2022, 'territoryCategoryId': MUNICIPAL_CATEGORY_ID, 'page': 1, 'pageSize': 10},
-        {'subthemeKey': MAX_KEY, 'year': 2022, 'territoryCategoryId': MUNICIPAL_CATEGORY_ID, 'page': 1, 'pageSize': 10},
-    ]
-    for i, params in enumerate(candidates, 1):
-        show(f'candidate_{i}', params)
+    common = {
+        'year': 2022,
+        'territoryCategoryId': MUNICIPAL_CATEGORY_ID,
+        'statMethod': 'mean',
+    }
+    # First request uses no pagination so the API decides its natural response.
+    summarize('mean_2022_natural', {**common, 'subthemeKey': MEAN_KEY})
+    # Large page diagnostic: if accepted, reveals total municipal coverage in one request.
+    summarize('mean_2022_large_page', {**common, 'subthemeKey': MEAN_KEY, 'page': 1, 'pageSize': 6000})
+    summarize('max_2022_large_page', {**common, 'subthemeKey': MAX_KEY, 'page': 1, 'pageSize': 6000})
 
 
 if __name__ == '__main__':
