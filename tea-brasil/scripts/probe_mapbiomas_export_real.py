@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Request one real public MapBiomas Atmosphere export for Brazil, 2022.
 
-This is a controlled probe for the annual mean air temperature raster. It does
-not alter TEA-Brasil datasets. The public SPA uses the same POST repeatedly and
-polls every 30 seconds while export statuses are pending.
+Controlled probe for the annual mean air temperature raster. The MapBiomas
+export endpoint legitimately answers HTTP 201 while the export is created.
+Repeated calls with the same payload follow the public SPA behavior and expose
+status/URL when the export is ready. No TEA-Brasil dataset is modified here.
 """
 from __future__ import annotations
 
@@ -60,8 +61,10 @@ def state(obj):
             return 'ready'
         if any(s in TERMINAL_BAD for s in statuses):
             return 'failed'
-        if statuses:
+        if any(s in IN_PROGRESS for s in statuses):
             return 'working'
+        if urls:
+            return 'ready'
     status = str(obj.get('status', ''))
     if status in TERMINAL_BAD:
         return 'failed'
@@ -72,19 +75,30 @@ def state(obj):
 
 def main():
     print('REQUEST', json.dumps(PAYLOAD, ensure_ascii=False))
-    for attempt in range(1, 9):
+    last_snapshot = None
+    for attempt in range(1, 13):
         status, obj = post()
-        print('\nATTEMPT', attempt, 'HTTP', status, 'STATE', state(obj))
-        print(json.dumps(obj, ensure_ascii=False, indent=2)[:30000])
-        if status != 200:
-            raise SystemExit(f'Export API HTTP {status}')
         st = state(obj)
+        snapshot = json.dumps(obj, ensure_ascii=False, sort_keys=True)
+        print('\nATTEMPT', attempt, 'HTTP', status, 'STATE', st)
+        if snapshot != last_snapshot or attempt == 1:
+            print(json.dumps(obj, ensure_ascii=False, indent=2)[:30000])
+            last_snapshot = snapshot
+        # 201 Created is the normal response while MapBiomas creates the export.
+        if status not in (200, 201):
+            raise SystemExit(f'Export API HTTP {status}')
         if st == 'ready':
             print('EXPORT_READY')
+            exports = obj.get('exports', []) if isinstance(obj, dict) else []
+            for item in exports:
+                if isinstance(item, dict) and item.get('url'):
+                    print('EXPORT_URL', item['url'])
+            if isinstance(obj, dict) and obj.get('url'):
+                print('EXPORT_URL', obj['url'])
             return
         if st == 'failed':
             raise SystemExit('Export failed')
-        if attempt < 8:
+        if attempt < 12:
             time.sleep(30)
     raise SystemExit('Export did not become ready within probe window')
 
