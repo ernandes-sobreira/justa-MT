@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
-"""Discover public MapBiomas SPA routes related to raster/statistics downloads.
+"""Inspect and validate the public MapBiomas map-export contract.
 
-Read-only diagnostic: fetches the public JS bundle and prints compact endpoint
-contexts only. No project data are changed.
+The only POST sent here has an empty JSON body, so it can only trigger backend
+validation; it cannot request a real export. No TEA-Brasil data are changed.
 """
 from __future__ import annotations
 
+import json
 import re
 import urllib.parse
 import urllib.request
+import urllib.error
 
 HOME = 'https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 HEADERS = {'User-Agent': 'TEA-Brasil/1.0'}
-NEEDLES = (
-    '/downloads', 'download/', 'downloads/', 'export/', '/export',
-    'analysis/download', 'asset/download', 'statistics/export',
-    'fileUrl', 'downloadUrl', 'signedUrl'
-)
+API_HEADERS = {
+    'User-Agent': 'TEA-Brasil/1.0',
+    'tenant-id': 'mapbiomas',
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+}
 
 
 def get(url: str) -> str:
@@ -25,20 +28,38 @@ def get(url: str) -> str:
         return r.read().decode('utf-8', errors='replace')
 
 
-def compact(s: str, limit: int = 2600) -> str:
+def compact(s: str, limit: int = 4200) -> str:
     return re.sub(r'\s+', ' ', s).strip()[:limit]
 
 
-def contexts(js: str, needle: str, radius: int = 1600, limit: int = 12):
+def contexts(js: str, needle: str, radius: int = 2600, limit: int = 15):
     pos = 0; out = []
-    low = js.lower(); target = needle.lower()
     while len(out) < limit:
-        i = low.find(target, pos)
+        i = js.find(needle, pos)
         if i < 0:
             break
         out.append((i, compact(js[max(0, i-radius):min(len(js), i+len(needle)+radius)])))
         pos = i + len(needle)
     return out
+
+
+def validation_post(host: str):
+    url = f'https://{host}.plataforma.mapbiomas.org/api/v1/brazil/maps/export'
+    req = urllib.request.Request(url, data=b'{}', headers=API_HEADERS, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=25) as r:
+            body = r.read().decode('utf-8', errors='replace')
+            status = r.status
+    except urllib.error.HTTPError as e:
+        status = e.code
+        body = e.read().decode('utf-8', errors='replace')
+    except Exception as e:
+        print('EXPORT_VALIDATION', host, 'ERROR', repr(e)); return
+    print('\nEXPORT_VALIDATION', host, 'HTTP', status)
+    try:
+        print(json.dumps(json.loads(body), ensure_ascii=False, indent=2)[:12000])
+    except Exception:
+        print(body[:12000])
 
 
 def main():
@@ -47,10 +68,11 @@ def main():
     urls = [urllib.parse.urljoin(HOME, s) for s in scripts if '/assets/' in s and s.endswith('.js')]
     for url in urls:
         js = get(url)
-        if 'download' not in js.lower() and 'export' not in js.lower():
+        if '/maps/export' not in js:
             continue
         print('BUNDLE', url, 'BYTES', len(js))
-        for needle in NEEDLES:
+        # Dk is the query hook around POST /maps/export. Its callers expose the body.
+        for needle in ('/maps/export', 'Dk(', 'territoryId', 'subthemeKey', 'exportFormat', 'fileName'):
             hits = contexts(js, needle)
             if not hits:
                 continue
@@ -58,18 +80,9 @@ def main():
             for idx, text in hits:
                 print('AT', idx, text)
 
-        found = set()
-        for q in ('`', '"', "'"):
-            pat = re.escape(q) + r'([^' + re.escape(q) + r'\n\r]{1,700})' + re.escape(q)
-            for m in re.finditer(pat, js):
-                s = m.group(1)
-                low = s.lower()
-                if '/' in s and any(k in low for k in ('download','export','analysis')):
-                    if 'api/v1' in low or low.startswith('/') or 'mapbiomas.org' in low:
-                        found.add(compact(s, 700))
-        print('\n### DOWNLOAD_EXPORT_ROUTES', len(found))
-        for s in sorted(found)[:160]:
-            print('ROUTE', s)
+    # Ask backend validation for the exact required body fields; empty JSON is inert.
+    validation_post('prd')
+    validation_post('dev')
 
 
 if __name__ == '__main__':
