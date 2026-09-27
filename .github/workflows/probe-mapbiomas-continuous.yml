@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'tea-brasil/scripts/probe_mapbiomas_continuous_route.py'
+      - 'tea-brasil/scripts/probe_mapbiomas_subtheme_api.py'
       - '.github/workflows/probe-mapbiomas-continuous.yml'
 
 permissions:
@@ -16,5 +17,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Extrair rota contínua do bundle
+      - name: Extrair rotas statistics do bundle
         run: python tea-brasil/scripts/probe_mapbiomas_continuous_route.py
+      - name: Testar statistics subtheme para temperatura 2022
+        run: python tea-brasil/scripts/probe_mapbiomas_subtheme_api.py
