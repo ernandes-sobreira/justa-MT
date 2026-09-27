@@ -1,0 +1,74 @@
+name: Build temperatura municipal MapBiomas 2022
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/build_mapbiomas_temperatura_2022.py'
+      - '.github/workflows/build-mapbiomas-temperatura.yml'
+
+concurrency:
+  group: build-mapbiomas-temperatura-2022
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias geoespaciais
+        run: python -m pip install --disable-pip-version-check --quiet geopandas rasterio
+
+      - name: Gerar e validar temperatura municipal 2022
+        run: python tea-brasil/scripts/build_mapbiomas_temperatura_2022.py
+
+      - name: Validacao independente dos arquivos finais
+        run: |
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          base = Path('tea-brasil/data')
+          csvp = base / 'mapbiomas_temperatura_2022.csv'
+          jsonp = base / 'mapbiomas_temperatura_2022.json'
+          metap = base / 'metadata_mapbiomas_temperatura_2022.json'
+          with csvp.open(encoding='utf-8-sig', newline='') as f:
+              rows = list(csv.DictReader(f))
+          codes = [r['codigo_ibge'] for r in rows]
+          assert len(rows) == 5570, len(rows)
+          assert len(set(codes)) == 5570, len(set(codes))
+          data = json.loads(jsonp.read_text(encoding='utf-8'))
+          meta = json.loads(metap.read_text(encoding='utf-8'))
+          assert len(data) == 5570
+          assert meta['universo']['linhas'] == 5570
+          assert meta['universo']['codigos_unicos'] == 5570
+          assert meta['status'] == 'validado_para_integracao', meta['status']
+          for field in ('temperatura_media_ar_c_2022','temperatura_minima_ar_c_2022','temperatura_maxima_ar_c_2022'):
+              assert meta['cobertura'][field]['validos'] >= 5550, (field, meta['cobertura'][field])
+          print('VALIDACAO_INDEPENDENTE_OK', len(rows), len(set(codes)))
+          PY
+
+      - name: Publicar somente dados validados no repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tea-brasil/data/mapbiomas_temperatura_2022.csv \
+                  tea-brasil/data/mapbiomas_temperatura_2022.json \
+                  tea-brasil/data/metadata_mapbiomas_temperatura_2022.json
+          if git diff --cached --quiet; then
+            echo "Sem alteracoes nos arquivos de temperatura."
+            exit 0
+          fi
+          git commit -m "Integra temperatura municipal MapBiomas 2022 validada"
+          git pull --rebase origin main
+          git push origin HEAD:main
