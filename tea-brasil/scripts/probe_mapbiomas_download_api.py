@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inspect and validate the public MapBiomas map-export contract.
+"""Inspect MapBiomas map-export contract and find a national territory id.
 
-The only POST sent here has an empty JSON body, so it can only trigger backend
-validation; it cannot request a real export. No TEA-Brasil data are changed.
+Read-only except for the deliberately inert POST with an empty body used to
+validate the export contract. No TEA-Brasil data are written.
 """
 from __future__ import annotations
 
@@ -20,12 +20,30 @@ API_HEADERS = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
 }
+PRD = 'https://prd.plataforma.mapbiomas.org/api/v1/brazil'
 
 
 def get(url: str) -> str:
     req = urllib.request.Request(url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=120) as r:
         return r.read().decode('utf-8', errors='replace')
+
+
+def api_get(url: str):
+    req = urllib.request.Request(url, headers=API_HEADERS, method='GET')
+    try:
+        with urllib.request.urlopen(req, timeout=40) as r:
+            body = r.read().decode('utf-8', errors='replace')
+            return r.status, json.loads(body)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode('utf-8', errors='replace')
+        try:
+            obj = json.loads(body)
+        except Exception:
+            obj = {'raw': body[:12000]}
+        return e.code, obj
+    except Exception as e:
+        return -1, {'error': repr(e)}
 
 
 def compact(s: str, limit: int = 4200) -> str:
@@ -62,7 +80,27 @@ def validation_post(host: str):
         print(body[:12000])
 
 
+def print_json(label: str, status: int, obj):
+    print('\n===', label, 'HTTP', status, '===')
+    print(json.dumps(obj, ensure_ascii=False, indent=2)[:50000])
+
+
+def probe_national_territory():
+    # A point in Brasilia should return the full territory hierarchy containing
+    # municipality/state/Brazil. We need the national territory ID for maps/export.
+    params = urllib.parse.urlencode({'latitude': -15.793889, 'longitude': -47.882778})
+    status, obj = api_get(f'{PRD}/territories/point?{params}')
+    print_json('TERRITORIES_POINT_BRASILIA', status, obj)
+
+    # Also inspect groups/categories around the point contract so we can identify
+    # the national-level candidate without guessing from translated names.
+    status, obj = api_get(f'{PRD}/territories/groups')
+    print_json('TERRITORY_GROUPS', status, obj)
+
+
 def main():
+    probe_national_territory()
+
     html = get(HOME)
     scripts = re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
     urls = [urllib.parse.urljoin(HOME, s) for s in scripts if '/assets/' in s and s.endswith('.js')]
@@ -71,7 +109,6 @@ def main():
         if '/maps/export' not in js:
             continue
         print('BUNDLE', url, 'BYTES', len(js))
-        # Dk is the query hook around POST /maps/export. Its callers expose the body.
         for needle in ('/maps/export', 'Dk(', 'territoryId', 'subthemeKey', 'exportFormat', 'fileName'):
             hits = contexts(js, needle)
             if not hits:
@@ -80,7 +117,6 @@ def main():
             for idx, text in hits:
                 print('AT', idx, text)
 
-    # Ask backend validation for the exact required body fields; empty JSON is inert.
     validation_post('prd')
     validation_post('dev')
 
