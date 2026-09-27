@@ -1,0 +1,21 @@
+name: Probe IBGE área 2022
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tea-brasil/scripts/probe_ibge_area_2022.py'
+      - '.github/workflows/probe-ibge-area-2022.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m pip install --quiet xlrd
+      - name: Inspecionar planilha oficial IBGE 2022
+        run: python tea-brasil/scripts/probe_ibge_area_2022.py
