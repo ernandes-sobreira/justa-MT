@@ -26,3 +26,5 @@ jobs:
         run: python tea-brasil/scripts/probe_mapbiomas_temperature_api.py
       - name: Testar validação e ranking municipal 2022
         run: python tea-brasil/scripts/probe_mapbiomas_ranking_api.py
+      - name: Localizar consulta de tarefas assíncronas
+        run: python tea-brasil/scripts/probe_mapbiomas_statistics_api.py
