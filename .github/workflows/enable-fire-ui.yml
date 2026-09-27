@@ -1,0 +1,47 @@
+name: Habilitar módulo de fogo TEA-Brasil
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/enable-fire-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-loader:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Carregar fire-v1.js após environment-v1.js
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tea-brasil/social-v1.js')
+          text = p.read_text(encoding='utf-8')
+          old = "  loadExtraScript('environment-v1.js','environment',()=>{if(typeof initEnvironment==='function')initEnvironment()});"
+          new = "  loadExtraScript('environment-v1.js','environment',()=>{if(typeof initEnvironment==='function')initEnvironment();loadExtraScript('fire-v1.js','fire',()=>{if(typeof initFire==='function')initFire()})});"
+          if new in text:
+              print('Loader de fogo já habilitado.')
+          elif old in text:
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+              print('Loader de fogo habilitado.')
+          else:
+              raise SystemExit('Trecho esperado de environment-v1.js não encontrado; abortando sem alterar o arquivo.')
+          PY
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check tea-brasil/social-v1.js
+          node --check tea-brasil/fire-v1.js
+      - name: Publicar alteração mínima
+        run: |
+          git config user.name 'tea-brasil-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tea-brasil/social-v1.js
+          if git diff --cached --quiet; then
+            echo 'Sem alterações.'
+          else
+            git commit -m 'Habilita módulo visual de fogo no TEA-Brasil'
+            git push
+          fi
