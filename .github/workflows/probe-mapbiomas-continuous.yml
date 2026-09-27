@@ -6,6 +6,7 @@ on:
     paths:
       - 'tea-brasil/scripts/probe_mapbiomas_continuous_route.py'
       - 'tea-brasil/scripts/probe_mapbiomas_subtheme_api.py'
+      - 'tea-brasil/scripts/probe_mapbiomas_propertycode.py'
       - '.github/workflows/probe-mapbiomas-continuous.yml'
 
 permissions:
@@ -21,3 +22,5 @@ jobs:
         run: python tea-brasil/scripts/probe_mapbiomas_continuous_route.py
       - name: Testar statistics subtheme para temperatura 2022
         run: python tea-brasil/scripts/probe_mapbiomas_subtheme_api.py
+      - name: Testar Cuiaba por propertyCode IBGE
+        run: python tea-brasil/scripts/probe_mapbiomas_propertycode.py
