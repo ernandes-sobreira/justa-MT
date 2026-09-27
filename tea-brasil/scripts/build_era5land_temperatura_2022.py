@@ -75,13 +75,13 @@ def download_bytes(url: str, timeout: int = 180) -> bytes:
 
 def read_master() -> pd.DataFrame:
     df = pd.read_csv(MASTER, dtype={"codigo_ibge": "string"}, encoding="utf-8-sig")
-    needed = {"codigo_ibge", "municipio", "uf"}
+    needed = {"codigo_ibge", "municipio", "uf", "percentual_tea_2022"}
     if not needed.issubset(df.columns):
         fail(f"Master missing columns: {sorted(needed - set(df.columns))}")
     df["codigo_ibge"] = df["codigo_ibge"].astype(str).str.zfill(7)
     if len(df) != EXPECTED or df["codigo_ibge"].nunique() != EXPECTED:
         fail(f"Master municipality universe is not {EXPECTED}: rows={len(df)}, unique={df['codigo_ibge'].nunique()}")
-    return df[["codigo_ibge", "municipio", "uf"]].copy()
+    return df[["codigo_ibge", "municipio", "uf", "percentual_tea_2022"]].copy()
 
 
 def ibge_points(master: pd.DataFrame) -> pd.DataFrame:
@@ -246,7 +246,7 @@ def validate_and_write(df: pd.DataFrame) -> None:
         df[c] = numeric.round(3)
 
     order = [
-        "codigo_ibge", "municipio", "uf",
+        "codigo_ibge", "municipio", "uf", "percentual_tea_2022",
         "temperatura_media_ar_c_2022", "temperatura_maxima_ar_c_2022", "temperatura_minima_ar_c_2022",
         "latitude_representativa", "longitude_representativa",
         "grid_latitude_era5land", "grid_longitude_era5land", "grid_elevation_era5land",
@@ -255,8 +255,8 @@ def validate_and_write(df: pd.DataFrame) -> None:
     df = df[order].sort_values("codigo_ibge").reset_index(drop=True)
     DATA.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUT_CSV, index=False, encoding="utf-8-sig", na_rep="NA")
-    records = df.where(pd.notna(df), None).to_dict(orient="records")
-    OUT_JSON.write_text(json.dumps(records, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    records = df.astype(object).where(pd.notna(df), None).to_dict(orient="records")
+    OUT_JSON.write_text(json.dumps(records, ensure_ascii=False, separators=(",", ":"), allow_nan=False), encoding="utf-8")
 
     coverage = {}
     coverage_en = {"valid_counts": {}, "na_counts": {}}
@@ -281,6 +281,14 @@ def validate_and_write(df: pd.DataFrame) -> None:
         "universo": {"linhas": EXPECTED, "codigos_unicos": EXPECTED},
         "municipalities_in_file": EXPECTED,
         "unique_codes": EXPECTED,
+        "tea_join": {
+            "campo": "percentual_tea_2022",
+            "fonte": "Censo 2022 / base TEA-Brasil previamente validada",
+            "chave": "codigo_ibge (7 digitos)",
+            "linhas": EXPECTED,
+            "codigos_unicos": EXPECTED,
+            "regra": "join one-to-one no universo mestre; ausencias TEA permanecem NA",
+        },
         "cobertura": coverage,
         "coverage": coverage_en,
         "metodo": {
@@ -298,7 +306,7 @@ def validate_and_write(df: pd.DataFrame) -> None:
         "ausentes": na_rows.to_dict(orient="records"),
         "gerado_em": date.today().isoformat(),
     }
-    OUT_META.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    OUT_META.write_text(json.dumps(meta, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     print("VALIDATED", json.dumps({"rows": len(df), "unique": df['codigo_ibge'].nunique(), "coverage": coverage}, ensure_ascii=False), flush=True)
 
 
