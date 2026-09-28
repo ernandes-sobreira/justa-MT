@@ -1,5 +1,6 @@
 name: Build temperatura municipal MapBiomas 2022
 
+# Execução validada para estatística zonal municipal IBGE 2022.
 on:
   workflow_dispatch:
   push:
