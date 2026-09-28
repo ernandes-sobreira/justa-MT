@@ -15,12 +15,14 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - name: Dependências leves para ler a malha IBGE 2022
+        run: python -m pip install --quiet pyshp shapely
       - name: Extrair rotas statistics do bundle
         run: python tea-brasil/scripts/probe_mapbiomas_continuous_route.py
       - name: Testar statistics subtheme para temperatura 2022
         run: python tea-brasil/scripts/probe_mapbiomas_subtheme_api.py
-      - name: Testar Cuiaba por propertyCode IBGE
+      - name: Testar Cuiabá com polígono municipal IBGE 2022
         run: python tea-brasil/scripts/probe_mapbiomas_propertycode.py
