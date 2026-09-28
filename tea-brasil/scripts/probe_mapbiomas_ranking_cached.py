@@ -39,7 +39,7 @@ def find_code(row):
  return None
 
 def run_case(label,key,page_size,include_parent=True):
- params={'year':2022,'territoryCategoryId':230,'statMethod':'mean','filters':'{}','page':1,'pageSize':page_size,'subthemeKey':key}
+ params={'year':2022,'territoryCategoryId':230,'statMethod':'mean','page':1,'pageSize':page_size,'subthemeKey':key}
  if include_parent:params['territoryId']=BRAZIL_ID
  url=BASE+'/statistics/ranking/subtheme?'+urllib.parse.urlencode(params)
  st,obj=get(url);print('\n===',label,'PAGESIZE',page_size,'PARENT',include_parent,'HTTP',st,'===')
@@ -55,11 +55,10 @@ def run_case(label,key,page_size,include_parent=True):
 def main():
  master=codes_master();print('MASTER',len(master))
  for label,key in KEYS.items():
-  # Exatamente o formato do frontend: território-pai Brasil + categoria + mean + filters + paginação.
+  # Formato efetivo do frontend sem filtros quando nenhum filtro está ativo.
   obj=run_case(label,key,6000,True)
   rows=obj.get('ranking') if isinstance(obj,dict) else None
   if not isinstance(rows,list) or not rows:
-   # Controle de diagnóstico: página pequena como a UI visual.
    obj=run_case(label+'_ui10',key,10,True);rows=obj.get('ranking') if isinstance(obj,dict) else None
   if isinstance(rows,list) and rows:
    recognized={c for c in (find_code(r) for r in rows) if c}
