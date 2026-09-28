@@ -1,10 +1,11 @@
-name: Check módulo temperatura TEA-Brasil
+name: Check módulos temperatura e variáveis TEA-Brasil
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'tea-brasil/temperature-v1.js'
+      - 'tea-brasil/temperature-mapbiomas-v1.js'
+      - 'tea-brasil/variable-selector-v1.js'
       - '.github/workflows/check-temperature-module.yml'
 
 permissions:
@@ -16,5 +17,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Validar sintaxe JavaScript
-        run: node --check tea-brasil/temperature-v1.js
+      - name: Validar sintaxe do módulo MapBiomas
+        run: node --check tea-brasil/temperature-mapbiomas-v1.js
+      - name: Validar sintaxe do seletor de variáveis
+        run: node --check tea-brasil/variable-selector-v1.js
+      - name: Confirmar arquivos e referências finais
+        run: |
+          grep -q "data/temperatura_2022.json" tea-brasil/temperature-mapbiomas-v1.js
+          grep -q "data/metadata_temperatura_2022.json" tea-brasil/temperature-mapbiomas-v1.js
+          grep -q "temp_mean" tea-brasil/variable-selector-v1.js
+          grep -q "temp_max" tea-brasil/variable-selector-v1.js
+          grep -q "temp_min" tea-brasil/variable-selector-v1.js
+          ! grep -q "era5land_temperatura_2022" tea-brasil/social-v1.js
+          echo "MODULOS_TEMPERATURA_VARIAVEIS_OK"
