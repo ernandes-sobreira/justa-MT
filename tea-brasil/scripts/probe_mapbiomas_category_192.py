@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Identifica categorias territoriais candidatas e inspeciona seus territórios."""
-import json,urllib.error,urllib.parse,urllib.request
+"""Identifica todas as categorias territoriais que parecem municipais."""
+import json,re,urllib.error,urllib.parse,urllib.request
 BASE='https://prd.plataforma.mapbiomas.org/api/v1/brazil'
 HEAD={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json'}
 def get(path):
@@ -13,17 +13,31 @@ def get(path):
   except:o={'raw':b[:1000]}
   return e.code,o
 
+def txt(c):
+ vals=[str(c.get(k,'')) for k in ('key','source','year','description')]
+ n=c.get('name')
+ if isinstance(n,dict):vals+=list(map(str,n.values()))
+ else:vals.append(str(n or ''))
+ return ' '.join(vals)
+
 def main():
- st,obj=get('/territories/categories?page=1&pageSize=1000')
+ st,obj=get('/territories/categories?page=1&pageSize=2000')
  print('CATEGORIES_HTTP',st)
  cats=obj.get('categories',[]) if isinstance(obj,dict) else []
- for cid in (192,193,230):
-  c=next((x for x in cats if x.get('id')==cid),None)
-  print('CATEGORY',cid,json.dumps(c,ensure_ascii=False,indent=2)[:12000])
-  st2,o=get('/territories?'+urllib.parse.urlencode({'categoryId':cid,'page':1,'pageSize':8}))
-  print('TERR_HTTP',cid,st2,'PAGES',o.get('numberOfPages') if isinstance(o,dict) else None)
-  print('TERR_SAMPLE',cid,json.dumps(o.get('territories',[])[:8] if isinstance(o,dict) else o,ensure_ascii=False,indent=2)[:12000])
-  if isinstance(o,dict):
-   count=next((x.get('count') for x in o.get('countByCategory',[]) if x.get('categoryId')==cid),None)
-   print('COUNT',cid,count)
+ print('CATEGORY_TOTAL',len(cats))
+ candidates=[]
+ for c in cats:
+  t=txt(c)
+  if re.search(r'munic[ií]p|municipal|ibge.*20(1[8-9]|2[0-5])|20(1[8-9]|2[0-5]).*ibge',t,re.I):
+   candidates.append(c)
+ print('MUNICIPAL_CANDIDATES',len(candidates))
+ for c in candidates:
+  cid=c.get('id')
+  st2,o=get('/territories?'+urllib.parse.urlencode({'categoryId':cid,'page':1,'pageSize':3}))
+  count=None
+  if isinstance(o,dict):count=next((x.get('count') for x in o.get('countByCategory',[]) if x.get('categoryId')==cid),None)
+  print('\nCATEGORY',cid,'COUNT',count)
+  print(json.dumps(c,ensure_ascii=False,indent=2)[:9000])
+  if isinstance(o,dict):print('SAMPLE',json.dumps(o.get('territories',[])[:3],ensure_ascii=False)[:5000])
+
 if __name__=='__main__':main()
