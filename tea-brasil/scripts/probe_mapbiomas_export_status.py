@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Probe curto e somente-leitura lógica do estado dos exports de temperatura MapBiomas.
-Repete o mesmo POST usado pela SPA/API; payload idêntico retorna o mesmo export e
-expõe status/URL quando pronto. Nenhum arquivo TEA-Brasil é alterado.
+"""Probe curto do estado dos exports MapBiomas e do acesso público aos ativos GEE.
+Nenhum arquivo TEA-Brasil é alterado.
 """
 from __future__ import annotations
 import json, urllib.error, urllib.request
@@ -18,17 +17,27 @@ EXPECTED_IDS={
     'max':'efec154f-7c05-4db8-a65f-b9f2eeb0df24',
     'min':'83bab6ef-d51a-4798-b73d-b3598f06be55',
 }
+GEE_URLS=[
+ 'https://earthengine.googleapis.com/v1/projects/mapbiomas-public/assets/brazil/atmosphere/collection1/mapbiomas_brazil_collection1_air_temperature_annual_v2',
+ 'https://earthengine.googleapis.com/v1/projects/mapbiomas-public/assets/brazil/atmosphere/collection1/mapbiomas_brazil_collection1_air_temperature_annual_v2/mapbiomas_brazil_collection1_air_temperature_mean_annual_v2',
+ 'https://earthengine.googleapis.com/v1/projects/earthengine-public/assets/ECMWF/ERA5_LAND/DAILY_AGGR',
+]
+
+def request(req):
+    try:
+        with urllib.request.urlopen(req,timeout=60) as r:
+            return r.status,r.read().decode('utf-8','replace')
+    except urllib.error.HTTPError as e:
+        return e.code,e.read().decode('utf-8','replace')
+    except Exception as e:
+        return -1,repr(e)
 
 def post(key):
     payload={'territoryId':'0582a562-7ef9-419c-8d0f-02622b631f6b','subthemeKey':PRODUCTS[key],'year':[2022],'exportType':'separate'}
     req=urllib.request.Request(API,data=json.dumps(payload).encode('utf-8'),headers=HEAD,method='POST')
-    try:
-        with urllib.request.urlopen(req,timeout=60) as r:
-            return r.status,json.loads(r.read().decode('utf-8','replace'))
-    except urllib.error.HTTPError as e:
-        body=e.read().decode('utf-8','replace')
-        try:return e.code,json.loads(body)
-        except Exception:return e.code,{'raw':body}
+    status,body=request(req)
+    try:return status,json.loads(body)
+    except Exception:return status,{'raw':body}
 
 def summarize(obj):
     out={}
@@ -42,14 +51,14 @@ def summarize(obj):
 def main():
     any_ready=False
     for key in ('mean','max','min'):
-        status,obj=post(key)
-        summary=summarize(obj)
-        text=json.dumps(summary,ensure_ascii=False)
-        print('PRODUCT',key,'HTTP',status,'EXPECTED_ID',EXPECTED_IDS[key])
-        print(text[:12000])
-        if any(token in text for token in ('"url": "http','"downloadUrl": "http','"fileUrl": "http')):
-            any_ready=True
+        status,obj=post(key);summary=summarize(obj);text=json.dumps(summary,ensure_ascii=False)
+        print('PRODUCT',key,'HTTP',status,'EXPECTED_ID',EXPECTED_IDS[key]);print(text[:12000])
+        if any(token in text for token in ('"url": "http','"downloadUrl": "http','"fileUrl": "http')):any_ready=True
     print('ANY_READY',any_ready)
+    for url in GEE_URLS:
+        status,body=request(urllib.request.Request(url,headers={'User-Agent':'TEA-Brasil/1.0','Accept':'application/json'},method='GET'))
+        print('GEE_GET',status,url)
+        print(body[:3000].replace('\n',' '))
 
 if __name__=='__main__':
     main()
