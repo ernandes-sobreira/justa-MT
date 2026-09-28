@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Probe curto do estado dos exports MapBiomas e do acesso público aos ativos GEE.
+"""Probe curto do estado dos exports MapBiomas e das rotas públicas de export.
 Nenhum arquivo TEA-Brasil é alterado.
 """
 from __future__ import annotations
-import json, urllib.error, urllib.request
+import json,re,urllib.error,urllib.parse,urllib.request
 
-API='https://prd.plataforma.mapbiomas.org/api/v1/brazil/maps/export'
+BASE='https://prd.plataforma.mapbiomas.org/api/v1/brazil'
+API=BASE+'/maps/export'
+HOME='https://plataforma.mapbiomas.org/projects/mapbiomas/brazil'
 HEAD={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json','Content-Type':'application/json'}
 PRODUCTS={
     'mean':'atmosphere_annual_mean_air_temperature',
@@ -17,11 +19,6 @@ EXPECTED_IDS={
     'max':'efec154f-7c05-4db8-a65f-b9f2eeb0df24',
     'min':'83bab6ef-d51a-4798-b73d-b3598f06be55',
 }
-GEE_URLS=[
- 'https://earthengine.googleapis.com/v1/projects/mapbiomas-public/assets/brazil/atmosphere/collection1/mapbiomas_brazil_collection1_air_temperature_annual_v2',
- 'https://earthengine.googleapis.com/v1/projects/mapbiomas-public/assets/brazil/atmosphere/collection1/mapbiomas_brazil_collection1_air_temperature_annual_v2/mapbiomas_brazil_collection1_air_temperature_mean_annual_v2',
- 'https://earthengine.googleapis.com/v1/projects/earthengine-public/assets/ECMWF/ERA5_LAND/DAILY_AGGR',
-]
 
 def request(req):
     try:
@@ -31,6 +28,9 @@ def request(req):
         return e.code,e.read().decode('utf-8','replace')
     except Exception as e:
         return -1,repr(e)
+
+def get(url):
+    return request(urllib.request.Request(url,headers={'User-Agent':'TEA-Brasil/1.0','tenant-id':'mapbiomas','Accept':'application/json'},method='GET'))
 
 def post(key):
     payload={'territoryId':'0582a562-7ef9-419c-8d0f-02622b631f6b','subthemeKey':PRODUCTS[key],'year':[2022],'exportType':'separate'}
@@ -45,8 +45,38 @@ def summarize(obj):
     for k in ('id','exportId','status','url','downloadUrl','fileUrl','message','error'):
         if k in obj:out[k]=obj[k]
     if isinstance(obj.get('exports'),list):
-        out['exports']=[{k:x.get(k) for k in ('id','status','url','downloadUrl','fileUrl','year') if k in x} for x in obj['exports'] if isinstance(x,dict)]
+        out['exports']=[{k:x.get(k) for k in ('id','exportId','status','url','downloadUrl','fileUrl','year') if k in x} for x in obj['exports'] if isinstance(x,dict)]
     return out or obj
+
+def inspect_bundle():
+    st,html=get(HOME);print('HOME',st)
+    if st!=200:return
+    scripts=re.findall(r'<script[^>]+src=["\']([^"\']+)',html,re.I)
+    for src in scripts:
+        if '/assets/' not in src or not src.endswith('.js'):continue
+        url=urllib.parse.urljoin(HOME,src);s,js=get(url)
+        if s!=200 or 'maps/export' not in js:continue
+        print('EXPORT_BUNDLE',url)
+        seen=set()
+        for m in re.finditer(r'maps/export',js):
+            snippet=re.sub(r'\s+',' ',js[max(0,m.start()-500):min(len(js),m.end()+900)])
+            if snippet not in seen:
+                print('EXPORT_SNIPPET',snippet[:1800]);seen.add(snippet)
+
+def probe_candidate_routes():
+    eid=EXPECTED_IDS['mean']
+    candidates=[
+        f'/maps/export/{eid}',
+        f'/maps/exports/{eid}',
+        f'/maps/export/status/{eid}',
+        f'/maps/export/{eid}/status',
+        f'/maps/exports/{eid}/status',
+        f'/maps/export?exportId={eid}',
+        f'/maps/export?id={eid}',
+    ]
+    for path in candidates:
+        st,body=get(BASE+path)
+        print('CANDIDATE',st,path,body[:3000].replace('\n',' '))
 
 def main():
     any_ready=False
@@ -55,10 +85,7 @@ def main():
         print('PRODUCT',key,'HTTP',status,'EXPECTED_ID',EXPECTED_IDS[key]);print(text[:12000])
         if any(token in text for token in ('"url": "http','"downloadUrl": "http','"fileUrl": "http')):any_ready=True
     print('ANY_READY',any_ready)
-    for url in GEE_URLS:
-        status,body=request(urllib.request.Request(url,headers={'User-Agent':'TEA-Brasil/1.0','Accept':'application/json'},method='GET'))
-        print('GEE_GET',status,url)
-        print(body[:3000].replace('\n',' '))
+    inspect_bundle()
+    probe_candidate_routes()
 
-if __name__=='__main__':
-    main()
+if __name__=='__main__':main()
