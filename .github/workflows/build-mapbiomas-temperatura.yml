@@ -17,7 +17,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,25 +36,33 @@ jobs:
       - name: Validacao independente dos arquivos finais
         run: |
           python - <<'PY'
-          import csv, json
+          import csv, json, math
           from pathlib import Path
           base = Path('tea-brasil/data')
-          csvp = base / 'mapbiomas_temperatura_2022.csv'
-          jsonp = base / 'mapbiomas_temperatura_2022.json'
-          metap = base / 'metadata_mapbiomas_temperatura_2022.json'
+          csvp = base / 'temperatura_2022.csv'
+          jsonp = base / 'temperatura_2022.json'
+          metap = base / 'metadata_temperatura_2022.json'
           with csvp.open(encoding='utf-8-sig', newline='') as f:
               rows = list(csv.DictReader(f))
           codes = [r['codigo_ibge'] for r in rows]
           assert len(rows) == 5570, len(rows)
           assert len(set(codes)) == 5570, len(set(codes))
+          assert all(len(c) == 7 and c.isdigit() for c in codes)
+          required = ('temp_media_anual_c_2022','temp_max_anual_c_2022','temp_min_anual_c_2022')
+          assert all(k in rows[0] for k in required)
           data = json.loads(jsonp.read_text(encoding='utf-8'))
           meta = json.loads(metap.read_text(encoding='utf-8'))
           assert len(data) == 5570
           assert meta['universo']['linhas'] == 5570
           assert meta['universo']['codigos_unicos'] == 5570
           assert meta['status'] == 'validado_para_integracao', meta['status']
-          for field in ('temperatura_media_ar_c_2022','temperatura_minima_ar_c_2022','temperatura_maxima_ar_c_2022'):
+          for field in required:
               assert meta['cobertura'][field]['validos'] >= 5550, (field, meta['cobertura'][field])
+          for r in rows:
+              vals = [float(r[k]) for k in required if r.get(k)]
+              assert all(-30 <= v <= 60 and math.isfinite(v) for v in vals)
+              if all(r.get(k) for k in required):
+                  assert float(r['temp_min_anual_c_2022']) <= float(r['temp_media_anual_c_2022']) <= float(r['temp_max_anual_c_2022'])
           print('VALIDACAO_INDEPENDENTE_OK', len(rows), len(set(codes)))
           PY
 
@@ -62,9 +70,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tea-brasil/data/mapbiomas_temperatura_2022.csv \
-                  tea-brasil/data/mapbiomas_temperatura_2022.json \
-                  tea-brasil/data/metadata_mapbiomas_temperatura_2022.json
+          git add tea-brasil/data/temperatura_2022.csv \
+                  tea-brasil/data/temperatura_2022.json \
+                  tea-brasil/data/metadata_temperatura_2022.json
           if git diff --cached --quiet; then
             echo "Sem alteracoes nos arquivos de temperatura."
             exit 0
